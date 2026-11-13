@@ -1,0 +1,65 @@
+{
+  "region": "it",
+  "ollama": {
+    "enable": true,
+    "model": "gemma4:12b",
+    "think": "high"
+  },
+  "filter": {
+    "cpu": {
+      "enable": true,
+      "sort.by": "normCpumark",
+      "sort.direction": "desc",
+      "limit": 1,
+      "year.min": 2022,
+      "__year.max": 2099,
+      "category": "Desktop",
+      "sockets": ["AM5", "FCLGA1851"],
+      "cpumark.min": 20000,
+      "__cpumark.max": 999999
+    },
+    "gpu": {
+      "enable": false,
+      "sort.by": "normG3d",
+      "sort.direction": "desc",
+      "limit": 2,
+      "year.min": 2022,
+      "__year.max": 2099,
+      "category": "Desktop",
+      "vram.min": 15000,
+      "vram.max": 99999,
+      "__g3d.min": 0,
+      "__g3d.max": 999999
+    },
+    "ssd": {
+      "enable": false,
+      "sort.by": "normDiskmark",
+      "sort.direction": "desc",
+      "limit": 5,
+      "year.min": 2022,
+      "__year.max": 2099,
+      "size.min": 3000,
+      "size.max": 5000,
+      "__diskmark.min": 0,
+      "__diskmark.max": 999999
+    },
+    "hdd": {
+      "enable": false,
+      "sort.by": "normSize",
+      "sort.direction": "desc",
+      "__limit": 9,
+      "year.min": 2024,
+      "year.max": 2099,
+      "size.min": 16000,
+      "size.max": 99000,
+      "diskmark.min": 0,
+      "diskmark.max": 999999
+    }
+  },
+  "out": {
+    "dir": "out",
+    "json": true,
+    "csv": true,
+    "txt": true
+  }
+}

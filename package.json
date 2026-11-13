@@ -1,0 +1,32 @@
+{
+    "name": "pc-build-companion",
+    "version": "0.0.1",
+    "private": true,
+    "type": "module",
+    "description": "This is an example of a Crawlee project.",
+    "dependencies": {
+        "@crawlee/impit-client": "^4.0.0-rc.1",
+        "@internationalized/number": "^3.6.9",
+        "crawlee": "^4.0.0-rc.1",
+        "csv": "^6.6.4",
+        "inquirer": "^14.3.0",
+        "ollama": "^0.6.4",
+        "playwright": "1.65.0"
+    },
+    "devDependencies": {
+        "@apify/tsconfig": "^0.2.0",
+        "@types/node": "^24.0.0",
+        "tsx": "^4.4.0",
+        "typescript": "~6.0.0"
+    },
+    "scripts": {
+        "start": "npm run start:dev",
+        "start:prod": "node dist/main.js",
+        "start:dev": "tsx src/main.ts",
+        "build": "tsc",
+        "test": "echo \"Error: oops, the actor has no tests yet, sad!\" && exit 1",
+        "postinstall": "npx crawlee install-playwright-browsers"
+    },
+    "author": "It's not you it's me",
+    "license": "ISC"
+}
