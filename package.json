@@ -1,9 +1,9 @@
 {
     "name": "pc-build-companion",
-    "version": "0.0.1",
+    "version": "0.2.0",
     "private": true,
     "type": "module",
-    "description": "This is an example of a Crawlee project.",
+    "description": "A simple tool for retrieving scores and prices for CPUs, GPUs, SSDs, and HDDs!",
     "dependencies": {
         "@crawlee/impit-client": "^4.0.0-rc.1",
         "@internationalized/number": "^3.6.9",
@@ -27,6 +27,6 @@
         "test": "echo \"Error: oops, the actor has no tests yet, sad!\" && exit 1",
         "postinstall": "npx crawlee install-playwright-browsers"
     },
-    "author": "It's not you it's me",
+    "author": "Francesco Bigozzi",
     "license": "ISC"
 }
