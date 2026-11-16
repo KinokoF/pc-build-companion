@@ -8,11 +8,22 @@ export const CONFIG: Config = untypedConfig as any;
 
 export const UNSET = "<unset>";
 
+export const REGION_TO_LOCALE = {
+  de: "de-DE",
+  fr: "fr-FR",
+  at: "de-AT",
+  it: "it-IT",
+  es: "es-ES",
+};
+
 export const EN_US_NUMBER_PARSER = new NumberParser("en-US");
-export const CURRENCY_PARSER = new NumberParser(CONFIG.region, {
-  style: "currency",
-  currency: "EUR",
-});
+export const CURRENCY_PARSER = new NumberParser(
+  REGION_TO_LOCALE[CONFIG.region],
+  {
+    style: "currency",
+    currency: "EUR",
+  },
+);
 
 export const OLLAMA = new Ollama({
   host: CONFIG.ollama?.host,
