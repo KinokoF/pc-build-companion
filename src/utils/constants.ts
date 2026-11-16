@@ -1,73 +1,85 @@
 import { NumberParser } from "@internationalized/number";
+import { Ollama } from "ollama";
 import untypedConfig from "../../config.json" with { type: "json" };
 import { Config } from "../models/config.model.js";
+import { customFetch } from "./utils.js";
 
 export const CONFIG: Config = untypedConfig as any;
 
 export const UNSET = "<unset>";
 
 export const EN_US_NUMBER_PARSER = new NumberParser("en-US");
-export const IT_IT_CURRENCY_PARSER = new NumberParser("it-IT", {
+export const CURRENCY_PARSER = new NumberParser(CONFIG.region, {
   style: "currency",
   currency: "EUR",
+});
+
+export const OLLAMA = new Ollama({
+  host: CONFIG.ollama?.host,
+  fetch: customFetch,
 });
 
 export const IDEALO_SUGGEST_LIMIT = 20;
 
 export const TYPES = ["cpu", "gpu", "ssd", "hdd"];
 
-export const REGION_TO_IDEALO = {
+export const REGION_TO_IDEALO_DATA = {
   de: {
-    slug: "preisvergleich/OffersOfProduct",
+    urlPrefix: "preisvergleich/OffersOfProduct",
     cats: {
       cpu: "in CPU/Prozessoren",
       gpu: "in Grafikkarten",
       ssd: "in SSDs",
       hdd: "in Festplatten",
     },
+    priceSuffix: "inkl. Versand",
   },
   fr: {
-    slug: "confronta-prezzi",
+    urlPrefix: "prix",
     cats: {
-      cpu: "in Processori/CPU",
-      gpu: "in Schede video",
-      ssd: "in SSD",
-      hdd: "in Hard disk",
+      cpu: "dans Processeurs",
+      gpu: "dans Cartes graphiques",
+      ssd: "dans SSD",
+      hdd: "dans Disques durs",
     },
+    priceSuffix: "livraison incl.",
   },
   at: {
-    slug: "confronta-prezzi",
+    urlPrefix: "preisvergleich/OffersOfProduct",
     cats: {
-      cpu: "in Processori/CPU",
-      gpu: "in Schede video",
-      ssd: "in SSD",
-      hdd: "in Hard disk",
+      cpu: "in CPU/Prozessoren",
+      gpu: "in Grafikkarten",
+      ssd: "in SSD-Festplatten",
+      hdd: "in Festplatten",
     },
+    priceSuffix: "inkl. Versand",
   },
   it: {
-    slug: "confronta-prezzi",
+    urlPrefix: "confronta-prezzi",
     cats: {
       cpu: "in Processori/CPU",
       gpu: "in Schede video",
       ssd: "in SSD",
       hdd: "in Hard disk",
     },
+    priceSuffix: "incl. spedizione",
   },
   es: {
-    slug: "confronta-prezzi",
+    urlPrefix: "precios",
     cats: {
-      cpu: "in Processori/CPU",
-      gpu: "in Schede video",
-      ssd: "in SSD",
-      hdd: "in Hard disk",
+      cpu: "en CPU",
+      gpu: "en Tarjetas gráficas",
+      ssd: "en SSD",
+      hdd: "en Discos duros",
     },
+    priceSuffix: "envío incl.",
   },
 };
 
 export const CONVERSION_TO_MB = {
   MB: 1,
-  GB: 1_000,
-  TB: 1_000_000,
+  GB: 1_024,
+  TB: 1_048_576,
 };
 
 export const IDEALO_PRICE_SELECTOR =

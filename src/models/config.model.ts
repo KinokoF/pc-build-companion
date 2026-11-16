@@ -1,9 +1,15 @@
 type Region = "de" | "fr" | "at" | "it" | "es";
 
+interface Crawler {
+  maxReqsPerMin?: number;
+}
+
 interface Ollama {
   enable?: boolean;
+  host?: string;
   model: string;
   think?: boolean | "high" | "medium" | "low";
+  timeout?: number;
 }
 
 export type SortDirection = "asc" | "desc";
@@ -55,6 +61,7 @@ interface Out {
 
 export interface Config {
   region: Region;
+  crawler?: Crawler;
   ollama?: Ollama;
   filter: Filter;
   out: Out;

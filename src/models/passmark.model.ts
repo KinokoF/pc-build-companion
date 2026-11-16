@@ -21,6 +21,6 @@ export interface Drive extends Entry {
   diskmark: string;
 }
 
-export interface Response<T> {
+export interface PassmarkResponse<T> {
   data: T[];
 }

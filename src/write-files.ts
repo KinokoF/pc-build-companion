@@ -5,6 +5,8 @@ import { PricedProduct } from "./models/state.model.js";
 import { state } from "./state.js";
 import { CONFIG, TYPES } from "./utils/constants.js";
 
+type RatioProduct = PricedProduct & { ratio: number };
+
 function getScore(product: PricedProduct): number {
   switch (product.objType) {
     case "cpu":
@@ -18,35 +20,33 @@ function getScore(product: PricedProduct): number {
   }
 }
 
-function writeJson(products: PricedProduct[], filename: string) {
+function writeJson(products: RatioProduct[], filename: string) {
   const json = JSON.stringify(products);
 
   writeFileSync(`${CONFIG.out.dir}/${filename}.json`, json);
 }
 
-function writeCsv(products: PricedProduct[], filename: string) {
+function writeCsv(products: RatioProduct[], filename: string) {
   const csv = stringify(products, { header: true });
 
   writeFileSync(`${CONFIG.out.dir}/${filename}.csv`, csv);
 }
 
-function writeTxt(products: PricedProduct[], filename: string) {
+function writeTxt(products: RatioProduct[], filename: string) {
   const txt = products
     .map((p) => {
-      const ratio = getScore(p) / p.idealoPrice;
-
       switch (p.objType) {
         case "cpu":
-          return `${p.idealoName} (cpumark: ${p.normCpumark}; price: ${p.idealoPrice}; ratio: ${ratio.toFixed(1)})`;
+          return `${p.idealoName}\n${p.idealoUrl}\nCpumark: ${p.normCpumark}; Price: ${p.idealoPrice}; Ratio: ${p.ratio.toFixed(1)}`;
         case "gpu":
-          return `${p.idealoName} (g3d: ${p.normG3d}; price: ${p.idealoPrice}; ratio: ${ratio.toFixed(1)})`;
+          return `${p.idealoName}\n${p.idealoUrl}\nG3D: ${p.normG3d}; Price: ${p.idealoPrice}; Ratio: ${p.ratio.toFixed(1)}`;
         case "ssd":
-          return `${p.idealoName} (diskmark: ${p.normDiskmark}; price: ${p.idealoPrice}; ratio: ${ratio.toFixed(1)})`;
+          return `${p.idealoName}\n${p.idealoUrl}\nDiskmark: ${p.normDiskmark}; Price: ${p.idealoPrice}; Ratio: ${p.ratio.toFixed(1)}`;
         case "hdd":
-          return `${p.idealoName} (GB: ${p.normSize}; price: ${p.idealoPrice}; ratio: ${ratio.toFixed(1)})`;
+          return `${p.idealoName}\n${p.idealoUrl}\nGB: ${p.normSize}; Price: ${p.idealoPrice}; Ratio: ${p.ratio.toFixed(1)}`;
       }
     })
-    .join("\n");
+    .join("\n\n");
 
   writeFileSync(`${CONFIG.out.dir}/${filename}.txt`, txt);
 }
@@ -60,11 +60,16 @@ export function writeFiles() {
   ) {
     mkdirSync(CONFIG.out.dir);
 
+    const date = new Date().toISOString().replaceAll(/:|\./g, "-");
+
     for (const type of TYPES) {
-      const filtered = state.products.filter((p) => p.objType === type);
+      const filtered = state.products
+        .filter((p) => p.objType === type)
+        .map((p) => ({ ...p, ratio: getScore(p) / p.idealoPrice }))
+        .sort((a, b) => b.ratio - a.ratio);
 
       if (filtered.length) {
-        const filename = type + "s";
+        const filename = `${type}s-${date}`;
 
         if (CONFIG.out.json) {
           writeJson(filtered, filename);

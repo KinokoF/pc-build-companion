@@ -1,5 +1,6 @@
+import { Agent } from "undici";
 import { SortDirection } from "../models/config.model.js";
-import { CONVERSION_TO_MB, EN_US_NUMBER_PARSER } from "./constants.js";
+import { CONFIG, CONVERSION_TO_MB, EN_US_NUMBER_PARSER } from "./constants.js";
 
 export function normalizeSize(label: string): number {
   const [num, unit] = label.split(" ");
@@ -17,6 +18,18 @@ function compare(a: any, b: any): number {
 
 export function getCompareFn<T>(by?: keyof T, direction?: SortDirection): (a: T, b: T) => number {
   return (a, b) => by
-    ? (direction !== 'desc' ? compare(a[by], b[by]) : compare(b[by], a[by]))
+    ? (direction !== "desc" ? compare(a[by], b[by]) : compare(b[by], a[by]))
     : 1;
+}
+
+export function customFetch(
+  input: string | URL | Request,
+  init?: RequestInit,
+): Promise<Response> {
+  const someInit = init ?? {};
+
+  return fetch(input, {
+    ...someInit,
+    dispatcher: new Agent({ headersTimeout: CONFIG.ollama?.timeout }),
+  } as any);
 }

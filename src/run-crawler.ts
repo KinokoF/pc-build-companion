@@ -1,8 +1,8 @@
 import { Browser, ImpitHttpClient } from "@crawlee/impit-client";
 import { ConcurrencySystem, PlaywrightCrawler, Statistics } from "crawlee";
 
-import { CONFIG } from "./utils/constants.js";
 import { router } from "./routes.js";
+import { CONFIG } from "./utils/constants.js";
 
 const BIG_NUM = 999999;
 
@@ -31,9 +31,9 @@ export async function runCrawler() {
   }
 
   const concurrencySystem = new ConcurrencySystem({
-    loggingIntervalSecs: BIG_NUM,
+    loggingIntervalSecs: null,
     maxConcurrency: 1,
-    maxTasksPerMinute: 10,
+    maxTasksPerMinute: CONFIG.crawler?.maxReqsPerMin,
   });
 
   const crawler = new PlaywrightCrawler({

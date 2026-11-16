@@ -1,12 +1,11 @@
 import { log } from 'console';
 import { createPlaywrightRouter } from 'crawlee';
 import inquirer from 'inquirer';
-import ollama from 'ollama';
 import { IdealoResponse } from './models/idealo.model.js';
-import { Cpu, Drive, Gpu, Response } from './models/passmark.model.js';
+import { Cpu, Drive, Gpu, PassmarkResponse } from './models/passmark.model.js';
 import { NormComponent, Product } from './models/state.model.js';
 import { state } from './state.js';
-import { CONFIG, EN_US_NUMBER_PARSER, IDEALO_PRICE_SELECTOR, IDEALO_SUGGEST_LIMIT, IT_IT_CURRENCY_PARSER, REGION_TO_IDEALO } from './utils/constants.js';
+import { CONFIG, CURRENCY_PARSER, EN_US_NUMBER_PARSER, IDEALO_PRICE_SELECTOR, IDEALO_SUGGEST_LIMIT, OLLAMA, REGION_TO_IDEALO_DATA } from './utils/constants.js';
 import { extractYear, getCompareFn, normalizeSize } from './utils/utils.js';
 
 export const router = createPlaywrightRouter();
@@ -14,7 +13,7 @@ export const router = createPlaywrightRouter();
 router.addHandler('cpu-list', async ({ sendRequest, addRequests }) => {
     log('Scraping CPUs...');
 
-    const res: Response<Cpu> = await sendRequest({
+    const res: PassmarkResponse<Cpu> = await sendRequest({
         url: 'https://www.cpubenchmark.net/data/?_=' + new Date().getTime(),
         headers: new Headers({
             "x-requested-with": "XMLHttpRequest"
@@ -51,7 +50,7 @@ router.addHandler('cpu-list', async ({ sendRequest, addRequests }) => {
 router.addHandler('gpu-list', async ({ sendRequest, addRequests }) => {
     log('Scraping GPUs...');
 
-    const res: Response<Gpu> = await sendRequest({
+    const res: PassmarkResponse<Gpu> = await sendRequest({
         url: 'https://www.videocardbenchmark.net/data/?_=' + new Date().getTime(),
         headers: new Headers({
             "x-requested-with": "XMLHttpRequest"
@@ -90,7 +89,7 @@ router.addHandler('gpu-list', async ({ sendRequest, addRequests }) => {
 router.addHandler('hdd-list', async ({ sendRequest, addRequests }) => {
     log('Scraping SSDs/HDDs...');
 
-    const res: Response<Drive> = await sendRequest({
+    const res: PassmarkResponse<Drive> = await sendRequest({
         url: 'https://www.harddrivebenchmark.net/data/?_=' + new Date().getTime(),
         headers: new Headers({
             "x-requested-with": "XMLHttpRequest"
@@ -103,7 +102,7 @@ router.addHandler('hdd-list', async ({ sendRequest, addRequests }) => {
         .data
         .map(d => {
             const normYear = extractYear(d.date);
-            const normSize = normalizeSize(d.size) / 1_000;
+            const normSize = normalizeSize(d.size) / 1_024;
             const normDiskmark = EN_US_NUMBER_PARSER.parse(d.diskmark);
 
             return { ...d, normYear, normSize, normDiskmark };
@@ -148,13 +147,15 @@ router.addHandler('idealo-suggest', async ({ request, page, addRequests }) => {
     const component: NormComponent = request.userData;
 
     log(`Scraping Idealo suggestions for ${component.name}...`);
-    
+
+    const urlPrefix = `https://www.idealo.${CONFIG.region}/${REGION_TO_IDEALO_DATA[CONFIG.region].urlPrefix}/`;
+    const location = REGION_TO_IDEALO_DATA[CONFIG.region].cats[component.objType];
+
     const json = await page.locator('pre').textContent();
     const suggestions = (JSON.parse(json!) as IdealoResponse)
         .groups[0]
         ?.items
-        .filter(s => s.url.startsWith(`https://www.idealo.${CONFIG.region}/${REGION_TO_IDEALO[CONFIG.region].slug}/`)
-            && s.location === REGION_TO_IDEALO[CONFIG.region].cats[component.objType]);
+        .filter(s => s.url.startsWith(urlPrefix) && s.location === location);
 
     if (suggestions?.length) {
         const compDetails = Object.entries(component).map(([k, v]) => `${k}: ${v}`).join('\n');
@@ -171,15 +172,17 @@ router.addHandler('idealo-suggest', async ({ request, page, addRequests }) => {
 
             log(prompt);
 
-            const response = await ollama.chat({
+            const res = await OLLAMA.chat({
                 model: CONFIG.ollama.model,
                 messages: [{ role: 'user', content: prompt }],
                 think: CONFIG.ollama.think
             });
 
-            log('Response: ' + response.message.content);
+            log('Response: ' + res.message.content);
 
-            indexes = response.message.content.split(',').map(s => +s);
+            indexes = res.message.content !== "-1"
+                ? res.message.content.split(',').map(s => +s)
+                : [];
         } else {
             log('COMPONENT DETAILS\n' + compDetails);
 
@@ -205,7 +208,11 @@ router.addHandler('idealo-suggest', async ({ request, page, addRequests }) => {
                 .map((s) => ({
                     url: s.url,
                     label: 'idealo-price',
-                    userData: { ...component, idealoName: s.titlePlain }
+                    userData: {
+                        ...component,
+                        idealoName: s.titlePlain,
+                        idealoUrl: s.url
+                    }
                 }));
 
             await addRequests(reqs);
@@ -218,12 +225,13 @@ router.addHandler('idealo-suggest', async ({ request, page, addRequests }) => {
 });
 
 router.addHandler('idealo-price', async ({ request, page }) => {
-    const product: Product = request.userData;
+    const product: Product = { ...request.userData, label: undefined };
 
     log(`Scraping Idealo price for ${product.idealoName} (${product.name})...`);
 
-    const rawPrice = await page.locator(IDEALO_PRICE_SELECTOR).first().innerText();
-    const idealoPrice = IT_IT_CURRENCY_PARSER.parse(rawPrice!.replaceAll(" incl. spedizione", ""));
+    const priceLabel = await page.locator(IDEALO_PRICE_SELECTOR).first().innerText();
+    const priceString = priceLabel.replaceAll(" " + REGION_TO_IDEALO_DATA[CONFIG.region].priceSuffix, "");
+    const idealoPrice = CURRENCY_PARSER.parse(priceString);
 
     state.products.push({ ...product, idealoPrice });
 });

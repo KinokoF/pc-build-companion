@@ -1,6 +1,6 @@
 {
     "name": "pc-build-companion",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "private": true,
     "type": "module",
     "description": "A simple tool for retrieving scores and prices for CPUs, GPUs, SSDs, and HDDs!",
@@ -11,7 +11,8 @@
         "csv": "^6.6.4",
         "inquirer": "^14.3.0",
         "ollama": "^0.6.4",
-        "playwright": "1.65.0"
+        "playwright": "1.65.0",
+        "undici": "^8.12.4"
     },
     "devDependencies": {
         "@apify/tsconfig": "^0.2.0",

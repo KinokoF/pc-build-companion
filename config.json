@@ -1,9 +1,14 @@
 {
   "region": "it",
+  "crawler": {
+    "maxReqsPerMin": 10
+  },
   "ollama": {
     "enable": true,
+    "__host": "<custom-ollama-base-url>",
     "model": "gemma4:12b",
-    "think": "high"
+    "think": true,
+    "timeout": 1800000
   },
   "filter": {
     "cpu": {
@@ -19,41 +24,41 @@
       "__cpumark.max": 999999
     },
     "gpu": {
-      "enable": false,
+      "enable": true,
       "sort.by": "normG3d",
       "sort.direction": "desc",
-      "limit": 2,
+      "limit": 1,
       "year.min": 2022,
       "__year.max": 2099,
       "category": "Desktop",
       "vram.min": 15000,
-      "vram.max": 99999,
-      "__g3d.min": 0,
+      "__vram.max": 999999,
+      "g3d.min": 15000,
       "__g3d.max": 999999
     },
     "ssd": {
-      "enable": false,
+      "enable": true,
       "sort.by": "normDiskmark",
       "sort.direction": "desc",
-      "limit": 5,
+      "limit": 1,
       "year.min": 2022,
       "__year.max": 2099,
       "size.min": 3000,
       "size.max": 5000,
-      "__diskmark.min": 0,
+      "diskmark.min": 20000,
       "__diskmark.max": 999999
     },
     "hdd": {
-      "enable": false,
+      "enable": true,
       "sort.by": "normSize",
       "sort.direction": "desc",
-      "__limit": 9,
-      "year.min": 2024,
-      "year.max": 2099,
-      "size.min": 16000,
-      "size.max": 99000,
-      "diskmark.min": 0,
-      "diskmark.max": 999999
+      "limit": 1,
+      "year.min": 2022,
+      "__year.max": 2099,
+      "size.min": 15000,
+      "__size.max": 999999,
+      "__diskmark.min": 0,
+      "__diskmark.max": 999999
     }
   },
   "out": {
