@@ -1,6 +1,6 @@
 import { log } from "console";
 import { stringify } from "csv/sync";
-import { mkdirSync, writeFileSync } from "fs";
+import { existsSync, mkdirSync, writeFileSync } from "fs";
 import { PricedProduct } from "./models/state.model.js";
 import { state } from "./state.js";
 import { CONFIG, TYPES } from "./utils/constants.js";
@@ -58,7 +58,9 @@ export function writeFiles() {
     state.products.length &&
     (CONFIG.out.json || CONFIG.out.csv || CONFIG.out.txt)
   ) {
-    mkdirSync(CONFIG.out.dir);
+    if (!existsSync(CONFIG.out.dir)) {
+      mkdirSync(CONFIG.out.dir);
+    }
 
     const date = new Date().toISOString().replaceAll(/:|\./g, "-");
 
