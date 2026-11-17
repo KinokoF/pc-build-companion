@@ -2,6 +2,7 @@ import { NumberParser } from "@internationalized/number";
 import { Ollama } from "ollama";
 import untypedConfig from "../../config.json" with { type: "json" };
 import { Config } from "../models/config.model.js";
+import { ObjType } from "../models/state.model.js";
 import { customFetch } from "./utils.js";
 
 export const CONFIG: Config = untypedConfig as any;
@@ -32,7 +33,7 @@ export const OLLAMA = new Ollama({
 
 export const IDEALO_SUGGEST_LIMIT = 20;
 
-export const TYPES = ["cpu", "gpu", "ssd", "hdd"];
+export const TYPES: ObjType[] = ["cpu", "gpu", "ssd", "hdd"];
 
 export const REGION_TO_IDEALO_DATA = {
   de: {
@@ -95,3 +96,22 @@ export const CONVERSION_TO_MB = {
 
 export const IDEALO_PRICE_SELECTOR =
   "div.best-total-price-box > div.line-offer-view > a > div.productOffers-listItemOfferShippingDetails";
+
+export const TYPE_TO_X_AXIS = {
+  cpu: {
+    key: "normCpumark",
+    title: "CPU Mark",
+  },
+  gpu: {
+    key: "normG3d",
+    title: "G3D Mark",
+  },
+  ssd: {
+    key: "normDiskmark",
+    title: "Disk Mark",
+  },
+  hdd: {
+    key: "normSize",
+    title: "Size (GB)",
+  },
+};

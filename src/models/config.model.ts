@@ -57,6 +57,7 @@ interface Out {
   json?: boolean;
   csv?: boolean;
   txt?: boolean;
+  plot?: boolean;
 }
 
 export interface Config {

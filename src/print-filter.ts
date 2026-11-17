@@ -19,8 +19,8 @@ export function printFilter() {
   log("   Year max      : " + (cpu["year.max"] ?? UNSET));
   log("   Category      : " + (cpu.category ?? UNSET));
   log("   Sockets       : " + (cpu.sockets?.join(", ") ?? UNSET));
-  log("   Cpumark min   : " + (cpu["cpumark.min"] ?? UNSET));
-  log("   Cpumark max   : " + (cpu["cpumark.max"] ?? UNSET));
+  log("   CPU Mark min  : " + (cpu["cpumark.min"] ?? UNSET));
+  log("   CPU Mark max  : " + (cpu["cpumark.max"] ?? UNSET));
   log("");
 
   log("GPU");
@@ -33,8 +33,8 @@ export function printFilter() {
   log("   Category      : " + (gpu.category ?? UNSET));
   log("   VRAM (MB) min : " + (gpu["vram.min"] ?? UNSET));
   log("   VRAM (MB) max : " + (gpu["vram.max"] ?? UNSET));
-  log("   G3D min       : " + (gpu["g3d.min"] ?? UNSET));
-  log("   G3D max       : " + (gpu["g3d.max"] ?? UNSET));
+  log("   G3D Mark min  : " + (gpu["g3d.min"] ?? UNSET));
+  log("   G3D Mark max  : " + (gpu["g3d.max"] ?? UNSET));
   log("");
 
   log("SSD");
@@ -46,8 +46,8 @@ export function printFilter() {
   log("   Year max      : " + (ssd["year.max"] ?? UNSET));
   log("   Size (GB) min : " + (ssd["size.min"] ?? UNSET));
   log("   Size (GB) max : " + (ssd["size.max"] ?? UNSET));
-  log("   Diskmark min  : " + (ssd["diskmark.min"] ?? UNSET));
-  log("   Diskmark max  : " + (ssd["diskmark.max"] ?? UNSET));
+  log("   Disk Mark min : " + (ssd["diskmark.min"] ?? UNSET));
+  log("   Disk Mark max : " + (ssd["diskmark.max"] ?? UNSET));
   log("");
 
   log("HDD");
@@ -59,8 +59,8 @@ export function printFilter() {
   log("   Year max      : " + (hdd["year.max"] ?? UNSET));
   log("   Size (GB) min : " + (hdd["size.min"] ?? UNSET));
   log("   Size (GB) max : " + (hdd["size.max"] ?? UNSET));
-  log("   Diskmark min  : " + (hdd["diskmark.min"] ?? UNSET));
-  log("   Diskmark max  : " + (hdd["diskmark.max"] ?? UNSET));
+  log("   Disk Mark min : " + (hdd["diskmark.min"] ?? UNSET));
+  log("   Disk Mark max : " + (hdd["diskmark.max"] ?? UNSET));
   log("");
 
   log("=====================\n");

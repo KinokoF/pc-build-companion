@@ -1,5 +1,7 @@
 import { Cpu, Drive, Gpu } from "./passmark.model.js";
 
+export type ObjType = "cpu" | "gpu" | "ssd" | "hdd";
+
 interface NormEntry {
   normYear: number;
 }

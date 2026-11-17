@@ -144,6 +144,8 @@ router.addHandler('hdd-list', async ({ sendRequest, addRequests }) => {
 });
 
 router.addHandler('idealo-suggest', async ({ request, page, addRequests }) => {
+    delete request.userData.label;
+
     const component: NormComponent = request.userData;
 
     log(`Scraping Idealo suggestions for ${component.name}...`);
@@ -164,7 +166,7 @@ router.addHandler('idealo-suggest', async ({ request, page, addRequests }) => {
         if (CONFIG.ollama?.enable) {
             log(`Asking ${CONFIG.ollama.model}...`);
 
-            const prompt = 'Return ONLY the comma-separated indexes of the following products that match the given component. Return -1 if there is no match.\n\n'
+            const prompt = 'Return ONLY the comma-separated indexes of the following products that match the given component. When the given component is an SSD or HDD, pay attention to its size when identifying the match(es). Return -1 if there is no match.\n\n'
                 + 'GIVEN COMPONENT\n'
                 + compDetails + '\n\n'
                 + 'LIST OF PRODUCTS\n'
@@ -180,7 +182,7 @@ router.addHandler('idealo-suggest', async ({ request, page, addRequests }) => {
 
             log('Response: ' + res.message.content);
 
-            indexes = res.message.content !== "-1"
+            indexes = res.message.content !== "-1" && res.message.content.match(/^\d+(,\d+)*$/)
                 ? res.message.content.split(',').map(s => +s)
                 : [];
         } else {
@@ -225,7 +227,9 @@ router.addHandler('idealo-suggest', async ({ request, page, addRequests }) => {
 });
 
 router.addHandler('idealo-price', async ({ request, page }) => {
-    const product: Product = { ...request.userData, label: undefined };
+    delete request.userData.label;
+
+    const product: Product = request.userData;
 
     log(`Scraping Idealo price for ${product.idealoName} (${product.name})...`);
 
