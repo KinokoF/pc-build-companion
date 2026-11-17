@@ -125,7 +125,7 @@ export function writeFiles() {
 
   if (
     state.products.length &&
-    (CONFIG.out.json || CONFIG.out.csv || CONFIG.out.txt)
+    (CONFIG.out.json || CONFIG.out.csv || CONFIG.out.txt || CONFIG.out.plot)
   ) {
     if (!existsSync(CONFIG.out.dir)) {
       mkdirSync(CONFIG.out.dir);

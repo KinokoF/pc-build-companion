@@ -1,4 +1,4 @@
-import { Agent } from "undici";
+import { Agent, fetch, Request, Response } from "undici";
 import { SortDirection } from "../models/config.model.js";
 import { CONFIG, CONVERSION_TO_MB, EN_US_NUMBER_PARSER } from "./constants.js";
 

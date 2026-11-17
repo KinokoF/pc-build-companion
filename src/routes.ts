@@ -144,9 +144,7 @@ router.addHandler('hdd-list', async ({ sendRequest, addRequests }) => {
 });
 
 router.addHandler('idealo-suggest', async ({ request, page, addRequests }) => {
-    delete request.userData.label;
-
-    const component: NormComponent = request.userData;
+    const { label, ...component } = request.userData as NormComponent & { label: string };
 
     log(`Scraping Idealo suggestions for ${component.name}...`);
 
@@ -227,9 +225,7 @@ router.addHandler('idealo-suggest', async ({ request, page, addRequests }) => {
 });
 
 router.addHandler('idealo-price', async ({ request, page }) => {
-    delete request.userData.label;
-
-    const product: Product = request.userData;
+    const { label, ...product } = request.userData as Product & { label: string };
 
     log(`Scraping Idealo price for ${product.idealoName} (${product.name})...`);
 

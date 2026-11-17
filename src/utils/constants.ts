@@ -5,7 +5,7 @@ import { Config } from "../models/config.model.js";
 import { ObjType } from "../models/state.model.js";
 import { customFetch } from "./utils.js";
 
-export const CONFIG: Config = untypedConfig as any;
+export const CONFIG = untypedConfig as Config;
 
 export const UNSET = "<unset>";
 
@@ -28,10 +28,10 @@ export const CURRENCY_PARSER = new NumberParser(
 
 export const OLLAMA = new Ollama({
   host: CONFIG.ollama?.host,
-  fetch: customFetch,
+  fetch: customFetch as any,
 });
 
-export const IDEALO_SUGGEST_LIMIT = 20;
+export const IDEALO_SUGGEST_LIMIT = 100;
 
 export const TYPES: ObjType[] = ["cpu", "gpu", "ssd", "hdd"];
 
