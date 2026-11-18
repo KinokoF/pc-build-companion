@@ -105,10 +105,10 @@ export const CONVERSION_TO_MB = {
   TB: 1_048_576,
 };
 
-export const IDEALO_PRICE_INCL_SHIPPING_SELECTOR =
-  "div.best-total-price-box > a.productOffers-listItemOfferPrice";
-
 export const IDEALO_PRICE_EXCL_SHIPPING_SELECTOR =
+  "a.productOffers-listItemOfferPrice";
+
+export const IDEALO_PRICE_INCL_SHIPPING_SELECTOR =
   "div.best-total-price-box > div.line-offer-view > a > div.productOffers-listItemOfferShippingDetails";
 
 export const IDEALO_EMPTY_SELECTOR =

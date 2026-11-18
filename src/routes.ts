@@ -1,6 +1,8 @@
 import { log } from 'console';
 import { createPlaywrightRouter } from 'crawlee';
 import inquirer from 'inquirer';
+import { Locator } from 'playwright';
+import { expect } from 'playwright/test';
 import { IdealoResponse } from './models/idealo.model.js';
 import { Cpu, Drive, Gpu, PassmarkResponse } from './models/passmark.model.js';
 import { NormComponent, Product } from './models/state.model.js';
@@ -9,7 +11,17 @@ import { CONFIG, CURRENCY_PARSER, EN_US_NUMBER_PARSER, IDEALO_DATA, IDEALO_EMPTY
 import { extractYear, getCompareFn, normalizeSize } from './utils/utils.js';
 
 function getIdealoSuggestUrl(q: string): string {
-    return `https://www.idealo.${REGION_DATA[CONFIG.region].domain}/suggest?q=${q}&max=${IDEALO_SUGGEST_LIMIT}`;
+  return `https://www.idealo.${REGION_DATA[CONFIG.region].domain}/suggest?q=${q}&max=${IDEALO_SUGGEST_LIMIT}`;
+}
+
+function existsLocator(locator: Locator): Promise<boolean> {
+  return expect
+    .poll(() => locator.count())
+    .toBeTruthy()
+    .then(
+      () => true,
+      () => false,
+    );
 }
 
 export const router = createPlaywrightRouter();
@@ -240,7 +252,7 @@ router.addHandler('idealo-price', async ({ request, page }) => {
     const priceLocator = page.locator(priceSelector);
     const emptyLocator = page.locator(IDEALO_EMPTY_SELECTOR);
 
-    if (await priceLocator.count()) {
+    if (await existsLocator(priceLocator)) {
         const priceLabel = await priceLocator.first().innerText();
         const priceString = priceLabel.replaceAll(" " + IDEALO_DATA[CONFIG.region].priceSuffix, "");
         const idealoPrice = CURRENCY_PARSER.parse(priceString);
@@ -248,7 +260,7 @@ router.addHandler('idealo-price', async ({ request, page }) => {
         log("Price: " + idealoPrice);
 
         state.products.push({ ...product, idealoPrice });
-    } else if (await emptyLocator.count()) {
+    } else if (await existsLocator(emptyLocator)) {
         log("Not available :c");
     } else {
         throw new Error("Unexpected Idealo product page structure");
