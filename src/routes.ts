@@ -5,7 +5,7 @@ import { IdealoResponse } from './models/idealo.model.js';
 import { Cpu, Drive, Gpu, PassmarkResponse } from './models/passmark.model.js';
 import { NormComponent, Product } from './models/state.model.js';
 import { state } from './state.js';
-import { CONFIG, CURRENCY_PARSER, EN_US_NUMBER_PARSER, IDEALO_PRICE_SELECTOR, IDEALO_SUGGEST_LIMIT, OLLAMA, REGION_TO_IDEALO_DATA } from './utils/constants.js';
+import { CONFIG, CURRENCY_PARSER, EN_US_NUMBER_PARSER, IDEALO_DATA, IDEALO_PRICE_SELECTOR, IDEALO_SUGGEST_LIMIT, OLLAMA, REGION_DATA } from './utils/constants.js';
 import { extractYear, getCompareFn, normalizeSize } from './utils/utils.js';
 
 export const router = createPlaywrightRouter();
@@ -39,7 +39,7 @@ router.addHandler('cpu-list', async ({ sendRequest, addRequests }) => {
         .sort(getCompareFn(filter.cpu["sort.by"] as any, filter.cpu["sort.direction"]))
         .slice(0, filter.cpu.limit)
         .map(c => ({
-            url: `https://www.idealo.${CONFIG.region}/suggest?q=${c.name}&max=${IDEALO_SUGGEST_LIMIT}`,
+            url: `https://www.idealo.${REGION_DATA[CONFIG.region].domain}/suggest?q=${c.name}&max=${IDEALO_SUGGEST_LIMIT}`,
             label: 'idealo-suggest',
             userData: { objType: 'cpu', ...c }
         }));
@@ -78,7 +78,7 @@ router.addHandler('gpu-list', async ({ sendRequest, addRequests }) => {
         .sort(getCompareFn(filter.gpu["sort.by"] as any, filter.gpu["sort.direction"]))
         .slice(0, filter.gpu.limit)
         .map(g => ({
-            url: `https://www.idealo.${CONFIG.region}/suggest?q=${g.name}&max=${IDEALO_SUGGEST_LIMIT}`,
+            url: `https://www.idealo.${REGION_DATA[CONFIG.region].domain}/suggest?q=${g.name}&max=${IDEALO_SUGGEST_LIMIT}`,
             label: 'idealo-suggest',
             userData: { objType: 'gpu', ...g }
         }));
@@ -119,7 +119,7 @@ router.addHandler('hdd-list', async ({ sendRequest, addRequests }) => {
         .sort(getCompareFn(filter.ssd["sort.by"] as any, filter.ssd["sort.direction"]))
         .slice(0, filter.ssd.limit)
         .map(s => ({
-            url: `https://www.idealo.${CONFIG.region}/suggest?q=${s.name}&max=${IDEALO_SUGGEST_LIMIT}`,
+            url: `https://www.idealo.${REGION_DATA[CONFIG.region].domain}/suggest?q=${s.name}&max=${IDEALO_SUGGEST_LIMIT}`,
             label: 'idealo-suggest',
             userData: { objType: 'ssd', ...s }
         }));
@@ -135,7 +135,7 @@ router.addHandler('hdd-list', async ({ sendRequest, addRequests }) => {
         .sort(getCompareFn(filter.hdd["sort.by"] as any, filter.hdd["sort.direction"]))
         .slice(0, filter.hdd.limit)
         .map(h => ({
-            url: `https://www.idealo.${CONFIG.region}/suggest?q=${h.name}&max=${IDEALO_SUGGEST_LIMIT}`,
+            url: `https://www.idealo.${REGION_DATA[CONFIG.region].domain}/suggest?q=${h.name}&max=${IDEALO_SUGGEST_LIMIT}`,
             label: 'idealo-suggest',
             userData: { objType: 'hdd', ...h }
         }));
@@ -148,14 +148,15 @@ router.addHandler('idealo-suggest', async ({ request, page, addRequests }) => {
 
     log(`Scraping Idealo suggestions for ${component.name}...`);
 
-    const urlPrefix = `https://www.idealo.${CONFIG.region}/${REGION_TO_IDEALO_DATA[CONFIG.region].urlPrefix}/`;
-    const location = REGION_TO_IDEALO_DATA[CONFIG.region].cats[component.objType];
+    const urlPrefix = `https://www.idealo.${REGION_DATA[CONFIG.region].domain}/${IDEALO_DATA[CONFIG.region].urlPrefix}/`;
+    const location = IDEALO_DATA[CONFIG.region].cats[component.objType];
 
     const json = await page.locator('pre').textContent();
     const suggestions = (JSON.parse(json!) as IdealoResponse)
         .groups[0]
         ?.items
-        .filter(s => s.url.startsWith(urlPrefix) && s.location === location);
+        .filter(s => s.url.startsWith(urlPrefix) && s.location === location)
+        .sort((a, b) => a.titlePlain.localeCompare(b.titlePlain));
 
     if (suggestions?.length) {
         const compDetails = Object.entries(component).map(([k, v]) => `${k}: ${v}`).join('\n');
@@ -230,7 +231,7 @@ router.addHandler('idealo-price', async ({ request, page }) => {
     log(`Scraping Idealo price for ${product.idealoName} (${product.name})...`);
 
     const priceLabel = await page.locator(IDEALO_PRICE_SELECTOR).first().innerText();
-    const priceString = priceLabel.replaceAll(" " + REGION_TO_IDEALO_DATA[CONFIG.region].priceSuffix, "");
+    const priceString = priceLabel.replaceAll(" " + IDEALO_DATA[CONFIG.region].priceSuffix, "");
     const idealoPrice = CURRENCY_PARSER.parse(priceString);
 
     state.products.push({ ...product, idealoPrice });

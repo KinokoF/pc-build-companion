@@ -9,17 +9,18 @@ export const CONFIG = untypedConfig as Config;
 
 export const UNSET = "<unset>";
 
-export const REGION_TO_LOCALE = {
-  de: "de-DE",
-  fr: "fr-FR",
-  at: "de-AT",
-  it: "it-IT",
-  es: "es-ES",
+export const REGION_DATA = {
+  de: { locale: "de-DE", domain: "de" },
+  fr: { locale: "fr-FR", domain: "fr" },
+  at: { locale: "de-AT", domain: "at" },
+  it: { locale: "it-IT", domain: "it" },
+  es: { locale: "es-ES", domain: "es" },
+  uk: { locale: "en-GB", domain: "co.uk" },
 };
 
 export const EN_US_NUMBER_PARSER = new NumberParser("en-US");
 export const CURRENCY_PARSER = new NumberParser(
-  REGION_TO_LOCALE[CONFIG.region],
+  REGION_DATA[CONFIG.region].locale,
   {
     style: "currency",
     currency: "EUR",
@@ -35,7 +36,7 @@ export const IDEALO_SUGGEST_LIMIT = 100;
 
 export const TYPES: ObjType[] = ["cpu", "gpu", "ssd", "hdd"];
 
-export const REGION_TO_IDEALO_DATA = {
+export const IDEALO_DATA = {
   de: {
     urlPrefix: "preisvergleich/OffersOfProduct",
     cats: {
@@ -85,6 +86,16 @@ export const REGION_TO_IDEALO_DATA = {
       hdd: "en Discos duros",
     },
     priceSuffix: "envío incl.",
+  },
+  uk: {
+    urlPrefix: "compare",
+    cats: {
+      cpu: "in CPUs",
+      gpu: "in Graphics Cards",
+      ssd: "in SSD",
+      hdd: "in Hard Drives",
+    },
+    priceSuffix: "incl. delivery",
   },
 };
 
