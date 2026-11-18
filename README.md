@@ -20,7 +20,7 @@ Disk Mark: 94742; Price: 824.6; Ratio: 114.9
 
 - **Four component types** — CPUs, GPUs, SSDs and HDDs, each with its own filters and each individually switchable.
 - **Flexible filters** — year, category, socket, video memory, capacity and benchmark score ranges, plus sorting and a per-type limit.
-- **Five idealo regions** — Germany, France, Austria, Italy and Spain.
+- **Six idealo regions** — Germany, France, Austria, Italy, Spain and UK.
 - **AI-assisted product matching** — a large language model (LLM) served by [Ollama](https://ollama.com/) decides which idealo listings actually correspond to a benchmarked component. Prefer to stay in control? Turn it off and pick the listings yourself from an interactive checklist.
 - **Value ranking** — every priced product gets a score-to-price ratio, and results are sorted best value first.
 - **Multiple output formats** — JSON, CSV, plain text and a PNG scatter plot of price against score.
@@ -175,15 +175,16 @@ A note on notation: in this README, a dotted name such as `ollama.enable` or `ou
 
 **Required.** Selects the idealo site used for searching and pricing. Prices are always in euros.
 
-| Value | Site                                | Country |
-| ----- | ----------------------------------- | ------- |
-| `de`  | [idealo.de](https://www.idealo.de/) | Germany |
-| `fr`  | [idealo.fr](https://www.idealo.fr/) | France  |
-| `at`  | [idealo.at](https://www.idealo.at/) | Austria |
-| `it`  | [idealo.it](https://www.idealo.it/) | Italy   |
-| `es`  | [idealo.es](https://www.idealo.es/) | Spain   |
+| Value | Site                                      | Country |
+| ----- | ----------------------------------------- | ------- |
+| `de`  | [idealo.de](https://www.idealo.de/)       | Germany |
+| `fr`  | [idealo.fr](https://www.idealo.fr/)       | France  |
+| `at`  | [idealo.at](https://www.idealo.at/)       | Austria |
+| `it`  | [idealo.it](https://www.idealo.it/)       | Italy   |
+| `es`  | [idealo.es](https://www.idealo.es/)       | Spain   |
+| `uk`  | [idealo.co.uk](https://www.idealo.co.uk/) | UK      |
 
-Only these five values are supported, exactly as written (in lower case). The value is not checked at startup: with any other value the benchmark charts are still downloaded, but every idealo search fails and no price is collected.
+Only these six values are supported, exactly as written (in lower case). The value is not checked at startup: with any other value the benchmark charts are still downloaded, but every idealo search fails and no price is collected.
 
 ### `crawler`
 
