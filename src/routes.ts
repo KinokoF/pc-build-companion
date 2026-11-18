@@ -5,8 +5,12 @@ import { IdealoResponse } from './models/idealo.model.js';
 import { Cpu, Drive, Gpu, PassmarkResponse } from './models/passmark.model.js';
 import { NormComponent, Product } from './models/state.model.js';
 import { state } from './state.js';
-import { CONFIG, CURRENCY_PARSER, EN_US_NUMBER_PARSER, IDEALO_DATA, IDEALO_PRICE_SELECTOR, IDEALO_SUGGEST_LIMIT, OLLAMA, REGION_DATA } from './utils/constants.js';
+import { CONFIG, CURRENCY_PARSER, EN_US_NUMBER_PARSER, IDEALO_DATA, IDEALO_EMPTY_SELECTOR, IDEALO_PRICE_EXCL_SHIPPING_SELECTOR, IDEALO_PRICE_INCL_SHIPPING_SELECTOR, IDEALO_SUGGEST_LIMIT, OLLAMA, REGION_DATA } from './utils/constants.js';
 import { extractYear, getCompareFn, normalizeSize } from './utils/utils.js';
+
+function getIdealoSuggestUrl(q: string): string {
+    return `https://www.idealo.${REGION_DATA[CONFIG.region].domain}/suggest?q=${q}&max=${IDEALO_SUGGEST_LIMIT}`;
+}
 
 export const router = createPlaywrightRouter();
 
@@ -39,7 +43,7 @@ router.addHandler('cpu-list', async ({ sendRequest, addRequests }) => {
         .sort(getCompareFn(filter.cpu["sort.by"] as any, filter.cpu["sort.direction"]))
         .slice(0, filter.cpu.limit)
         .map(c => ({
-            url: `https://www.idealo.${REGION_DATA[CONFIG.region].domain}/suggest?q=${c.name}&max=${IDEALO_SUGGEST_LIMIT}`,
+            url: getIdealoSuggestUrl(c.name),
             label: 'idealo-suggest',
             userData: { objType: 'cpu', ...c }
         }));
@@ -78,7 +82,7 @@ router.addHandler('gpu-list', async ({ sendRequest, addRequests }) => {
         .sort(getCompareFn(filter.gpu["sort.by"] as any, filter.gpu["sort.direction"]))
         .slice(0, filter.gpu.limit)
         .map(g => ({
-            url: `https://www.idealo.${REGION_DATA[CONFIG.region].domain}/suggest?q=${g.name}&max=${IDEALO_SUGGEST_LIMIT}`,
+            url: getIdealoSuggestUrl(g.name),
             label: 'idealo-suggest',
             userData: { objType: 'gpu', ...g }
         }));
@@ -119,7 +123,7 @@ router.addHandler('hdd-list', async ({ sendRequest, addRequests }) => {
         .sort(getCompareFn(filter.ssd["sort.by"] as any, filter.ssd["sort.direction"]))
         .slice(0, filter.ssd.limit)
         .map(s => ({
-            url: `https://www.idealo.${REGION_DATA[CONFIG.region].domain}/suggest?q=${s.name}&max=${IDEALO_SUGGEST_LIMIT}`,
+            url: getIdealoSuggestUrl(s.name),
             label: 'idealo-suggest',
             userData: { objType: 'ssd', ...s }
         }));
@@ -135,7 +139,7 @@ router.addHandler('hdd-list', async ({ sendRequest, addRequests }) => {
         .sort(getCompareFn(filter.hdd["sort.by"] as any, filter.hdd["sort.direction"]))
         .slice(0, filter.hdd.limit)
         .map(h => ({
-            url: `https://www.idealo.${REGION_DATA[CONFIG.region].domain}/suggest?q=${h.name}&max=${IDEALO_SUGGEST_LIMIT}`,
+            url: getIdealoSuggestUrl(h.name),
             label: 'idealo-suggest',
             userData: { objType: 'hdd', ...h }
         }));
@@ -230,9 +234,23 @@ router.addHandler('idealo-price', async ({ request, page }) => {
 
     log(`Scraping Idealo price for ${product.idealoName} (${product.name})...`);
 
-    const priceLabel = await page.locator(IDEALO_PRICE_SELECTOR).first().innerText();
-    const priceString = priceLabel.replaceAll(" " + IDEALO_DATA[CONFIG.region].priceSuffix, "");
-    const idealoPrice = CURRENCY_PARSER.parse(priceString);
+    const priceSelector = CONFIG.scraping?.priceIncludingShipping
+        ? IDEALO_PRICE_INCL_SHIPPING_SELECTOR
+        : IDEALO_PRICE_EXCL_SHIPPING_SELECTOR;
+    const priceLocator = page.locator(priceSelector);
+    const emptyLocator = page.locator(IDEALO_EMPTY_SELECTOR);
 
-    state.products.push({ ...product, idealoPrice });
+    if (await priceLocator.count()) {
+        const priceLabel = await priceLocator.first().innerText();
+        const priceString = priceLabel.replaceAll(" " + IDEALO_DATA[CONFIG.region].priceSuffix, "");
+        const idealoPrice = CURRENCY_PARSER.parse(priceString);
+
+        log("Price: " + idealoPrice);
+
+        state.products.push({ ...product, idealoPrice });
+    } else if (await emptyLocator.count()) {
+        log("Not available :c");
+    } else {
+        throw new Error("Unexpected Idealo product page structure");
+    }
 });

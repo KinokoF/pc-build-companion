@@ -28,7 +28,7 @@ export function customFetch(
 ): Promise<Response> {
   const someInit = init ?? {};
   const headersTimeout = CONFIG.ollama?.timeout
-    ? CONFIG.ollama.timeout * 1000
+    ? CONFIG.ollama.timeout * 1_000
     : undefined;
 
   return fetch(input, {

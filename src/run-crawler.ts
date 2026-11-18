@@ -4,7 +4,7 @@ import { ConcurrencySystem, PlaywrightCrawler, Statistics } from "crawlee";
 import { router } from "./routes.js";
 import { CONFIG } from "./utils/constants.js";
 
-const BIG_NUM = 999999;
+const BIG_NUM = 999_999;
 
 export async function runCrawler() {
   const startUrls = [];

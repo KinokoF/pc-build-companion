@@ -52,12 +52,22 @@ interface Filter {
   hdd: DriveFilter;
 }
 
+interface Scraping {
+  priceIncludingShipping?: boolean;
+}
+
 interface Out {
   dir: string;
+  filename?: string;
   json?: boolean;
   csv?: boolean;
   txt?: boolean;
   plot?: boolean;
+}
+
+interface Loop {
+  enable?: boolean;
+  interval?: number;
 }
 
 export interface Config {
@@ -65,5 +75,7 @@ export interface Config {
   crawler?: Crawler;
   ollama?: Ollama;
   filter: Filter;
+  scraping?: Scraping;
   out: Out;
+  loop?: Loop;
 }

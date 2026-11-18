@@ -11,7 +11,7 @@ import { CONFIG, TYPE_TO_X_AXIS, TYPES } from "./utils/constants.js";
 
 type RatioProduct = PricedProduct & { ratio: number };
 
-const PLOT_WIDTH = 1200;
+const PLOT_WIDTH = 1_200;
 const PLOT_HEIGHT = 900;
 
 function getScore(product: PricedProduct): number {
@@ -140,7 +140,11 @@ export function writeFiles() {
         .sort((a, b) => b.ratio - a.ratio);
 
       if (filtered.length) {
-        const filename = `${type}s-${date}`;
+        const filename = CONFIG.out.filename
+          ? CONFIG.out.filename
+              .replaceAll("{TYPE}", type)
+              .replaceAll("{DATE}", date)
+          : `${type}s-${date}`;
 
         if (CONFIG.out.json) {
           writeJson(filtered, filename);

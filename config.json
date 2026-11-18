@@ -61,11 +61,19 @@
       "__diskmark.max": 999999
     }
   },
+  "scraping": {
+    "priceIncludingShipping": true
+  },
   "out": {
     "dir": "out",
+    "__filename": "{TYPE}s",
     "json": true,
     "csv": true,
     "txt": true,
     "plot": true
+  },
+  "loop": {
+    "enable": false,
+    "interval": 86400
   }
 }
