@@ -1,11 +1,9 @@
 import { log } from "console";
 import { rmSync } from "fs";
-import { CONFIG } from "./utils/constants.js";
+import { Config } from "./models/config.model.js";
 
-export function cleanUp() {
-  if (process.argv.includes("do-clean-up")) {
-    log(`Cleaning output directory (${CONFIG.out.dir})...`);
+export function cleanUp(config: Config): void {
+  log(`Deleting output directory (${config.out.dir})...`);
 
-    rmSync(CONFIG.out.dir, { force: true, recursive: true });
-  }
+  rmSync(config.out.dir, { force: true, recursive: true });
 }

@@ -1,7 +1,8 @@
 import { log } from "console";
-import { CONFIG, UNSET } from "./utils/constants.js";
+import { Config } from "./models/config.model.js";
+import { UNSET } from "./utils/constants.js";
 
-export function printBanner() {
+export function printBanner(config: Config): void {
   const version = process.env.npm_package_version;
 
   log(`
@@ -13,32 +14,33 @@ A simple tool for retrieving scores and prices for CPUs, GPUs, SSDs, and HDDs!
 
 ====== CONFIG ======
 
-Region             : ${CONFIG.region}
+Regions            : ${config.regions.join(", ")}
 
 Crawler
-    Max reqs/min   : ${CONFIG.crawler?.maxReqsPerMin ?? UNSET}
+    Max reqs/min   : ${config.crawler?.maxReqsPerMin ?? UNSET}
 
 Ollama
-    Enable         : ${CONFIG.ollama?.enable ?? UNSET}
-    Host           : ${CONFIG.ollama?.host ?? UNSET}
-    Model          : ${CONFIG.ollama?.model ?? UNSET}
-    Think          : ${CONFIG.ollama?.think ?? UNSET}
-    Timeout (s)    : ${CONFIG.ollama?.timeout ?? UNSET}
+    Enable         : ${config.ollama?.enable ?? UNSET}
+    Host           : ${config.ollama?.host ?? UNSET}
+    Model          : ${config.ollama?.model ?? UNSET}
+    Think          : ${config.ollama?.think ?? UNSET}
+    Timeout (s)    : ${config.ollama?.timeout ?? UNSET}
 
 Scraping
-    Incl. shipping : ${CONFIG.scraping?.priceIncludingShipping ?? UNSET}
+    Legacy search  : ${config.scraping?.legacySearch ?? UNSET}
+    Incl. shipping : ${config.scraping?.priceIncludingShipping ?? UNSET}
 
 Output
-    Dir            : ${CONFIG.out.dir}
-    Filename       : ${CONFIG.out.filename ?? UNSET}
-    JSON           : ${CONFIG.out.json ?? UNSET}
-    CSV            : ${CONFIG.out.csv ?? UNSET}
-    TXT            : ${CONFIG.out.txt ?? UNSET}
-    Plot           : ${CONFIG.out.plot ?? UNSET}
+    Dir            : ${config.out.dir}
+    Filename       : ${config.out.filename ?? UNSET}
+    JSON           : ${config.out.json ?? UNSET}
+    CSV            : ${config.out.csv ?? UNSET}
+    TXT            : ${config.out.txt ?? UNSET}
+    Plot           : ${config.out.plot ?? UNSET}
 
 Loop
-    Enable         : ${CONFIG.loop?.enable ?? UNSET}
-    Interval (s)   : ${CONFIG.loop?.interval ?? UNSET}
+    Enable         : ${config.loop?.enable ?? UNSET}
+    Interval (s)   : ${config.loop?.interval ?? UNSET}
 
 ====================\n`);
 }

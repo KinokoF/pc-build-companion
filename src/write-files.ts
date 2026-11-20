@@ -4,10 +4,11 @@ import ChartDataLabels from "chartjs-plugin-datalabels";
 import { log } from "console";
 import { stringify } from "csv/sync";
 import { formatHex } from "culori";
-import { existsSync, mkdirSync, writeFileSync } from "fs";
+import { mkdirSync, writeFileSync } from "fs";
+import { Config, Region } from "./models/config.model.js";
 import { ObjType, PricedProduct } from "./models/state.model.js";
 import { state } from "./state.js";
-import { CONFIG, TYPE_TO_X_AXIS, TYPES } from "./utils/constants.js";
+import { REGION_DATA, TYPE_TO_X_AXIS, TYPES } from "./utils/constants.js";
 
 type RatioProduct = PricedProduct & { ratio: number };
 
@@ -27,19 +28,40 @@ function getScore(product: PricedProduct): number {
   }
 }
 
-function writeJson(products: RatioProduct[], filename: string) {
+function getCurrencySymbol(region: Region): string {
+  return new Intl.NumberFormat(REGION_DATA[region].locale, {
+    style: "currency",
+    currency: REGION_DATA[region].currency,
+  })
+    .formatToParts(0)
+    .find((p) => p.type === "currency")!.value;
+}
+
+function writeJson(
+  config: Config,
+  products: RatioProduct[],
+  filename: string,
+): void {
   const json = JSON.stringify(products);
 
-  writeFileSync(`${CONFIG.out.dir}/${filename}.json`, json);
+  writeFileSync(`${config.out.dir}/${filename}.json`, json);
 }
 
-function writeCsv(products: RatioProduct[], filename: string) {
+function writeCsv(
+  config: Config,
+  products: RatioProduct[],
+  filename: string,
+): void {
   const csv = stringify(products, { header: true });
 
-  writeFileSync(`${CONFIG.out.dir}/${filename}.csv`, csv);
+  writeFileSync(`${config.out.dir}/${filename}.csv`, csv);
 }
 
-function writeTxt(products: RatioProduct[], filename: string) {
+function writeTxt(
+  config: Config,
+  products: RatioProduct[],
+  filename: string,
+): void {
   const txt = products
     .map((p) => {
       switch (p.objType) {
@@ -55,11 +77,19 @@ function writeTxt(products: RatioProduct[], filename: string) {
     })
     .join("\n\n");
 
-  writeFileSync(`${CONFIG.out.dir}/${filename}.txt`, txt);
+  writeFileSync(`${config.out.dir}/${filename}.txt`, txt);
 }
 
-function writePlot(type: ObjType, products: RatioProduct[], filename: string) {
+function writePlot(
+  config: Config,
+  region: Region,
+  type: ObjType,
+  products: RatioProduct[],
+  filename: string,
+): void {
   Chart.register([ScatterController, LinearScale, PointElement]);
+
+  const currencySymbol = getCurrencySymbol(region);
 
   const canvas = createCanvas(PLOT_WIDTH, PLOT_HEIGHT);
   const chart = new Chart(canvas as any, {
@@ -93,7 +123,7 @@ function writePlot(type: ObjType, products: RatioProduct[], filename: string) {
         y: {
           beginAtZero: true,
           grace: "10%",
-          title: { display: true, text: "Price (€)" },
+          title: { display: true, text: `Price (${currencySymbol})` },
         },
       },
       plugins: {
@@ -115,21 +145,19 @@ function writePlot(type: ObjType, products: RatioProduct[], filename: string) {
 
   const png = canvas.toBuffer();
 
-  writeFileSync(`${CONFIG.out.dir}/${filename}.png`, png);
+  writeFileSync(`${config.out.dir}/${filename}.png`, png);
 
   chart.destroy();
 }
 
-export function writeFiles() {
+export function writeFiles(config: Config, region: Region): void {
   log("Writing JSONs/CSVs/TXTs/plots...");
 
   if (
     state.products.length &&
-    (CONFIG.out.json || CONFIG.out.csv || CONFIG.out.txt || CONFIG.out.plot)
+    (config.out.json || config.out.csv || config.out.txt || config.out.plot)
   ) {
-    if (!existsSync(CONFIG.out.dir)) {
-      mkdirSync(CONFIG.out.dir);
-    }
+    mkdirSync(config.out.dir, { recursive: true });
 
     const date = new Date().toISOString().replaceAll(/:|\./g, "-");
 
@@ -140,26 +168,25 @@ export function writeFiles() {
         .sort((a, b) => b.ratio - a.ratio);
 
       if (filtered.length) {
-        const filename = CONFIG.out.filename
-          ? CONFIG.out.filename
-              .replaceAll("{TYPE}", type)
-              .replaceAll("{DATE}", date)
-          : `${type}s-${date}`;
+        const filename = config.out.filename
+          .replaceAll("{TYPE}", type)
+          .replaceAll("{REGION}", region)
+          .replaceAll("{DATE}", date);
 
-        if (CONFIG.out.json) {
-          writeJson(filtered, filename);
+        if (config.out.json) {
+          writeJson(config, filtered, filename);
         }
 
-        if (CONFIG.out.csv) {
-          writeCsv(filtered, filename);
+        if (config.out.csv) {
+          writeCsv(config, filtered, filename);
         }
 
-        if (CONFIG.out.txt) {
-          writeTxt(filtered, filename);
+        if (config.out.txt) {
+          writeTxt(config, filtered, filename);
         }
 
-        if (CONFIG.out.plot) {
-          writePlot(type, filtered, filename);
+        if (config.out.plot) {
+          writePlot(config, region, type, filtered, filename);
         }
       }
     }

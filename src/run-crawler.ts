@@ -1,29 +1,33 @@
 import { Browser, ImpitHttpClient } from "@crawlee/impit-client";
 import { ConcurrencySystem, PlaywrightCrawler, Statistics } from "crawlee";
-
-import { router } from "./routes.js";
-import { CONFIG } from "./utils/constants.js";
+import { Ollama } from "ollama";
+import { Config, Region } from "./models/config.model.js";
+import { getRouter } from "./routes.js";
 
 const BIG_NUM = 999_999;
 
-export async function runCrawler() {
+export async function runCrawler(
+  config: Config,
+  region: Region,
+  ollama: Ollama,
+): Promise<void> {
   const startUrls = [];
 
-  if (CONFIG.filter.cpu.enable) {
+  if (config.filter.cpu?.enable) {
     startUrls.push({
       url: "https://www.cpubenchmark.net/CPU_mega_page.html",
       label: "cpu-list",
     });
   }
 
-  if (CONFIG.filter.gpu.enable) {
+  if (config.filter.gpu?.enable) {
     startUrls.push({
       url: "https://www.videocardbenchmark.net/GPU_mega_page.html",
       label: "gpu-list",
     });
   }
 
-  if (CONFIG.filter.ssd.enable || CONFIG.filter.hdd.enable) {
+  if (config.filter.ssd?.enable || config.filter.hdd?.enable) {
     startUrls.push({
       url: "https://www.harddrivebenchmark.net/hdd-mega-page.html",
       label: "hdd-list",
@@ -33,14 +37,13 @@ export async function runCrawler() {
   const concurrencySystem = new ConcurrencySystem({
     loggingIntervalSecs: null,
     maxConcurrency: 1,
-    maxTasksPerMinute: CONFIG.crawler?.maxReqsPerMin,
+    maxTasksPerMinute: config.crawler?.maxReqsPerMin,
   });
 
   const crawler = new PlaywrightCrawler({
     httpClient: new ImpitHttpClient({ browser: Browser.Chrome }),
-    requestHandler: router,
+    requestHandler: getRouter(config, region, ollama),
     requestHandlerTimeoutSecs: BIG_NUM,
-    // maxRequestsPerCrawl: 5,
     statusMessageLoggingInterval: BIG_NUM,
     statistics: new Statistics({ logIntervalSecs: BIG_NUM }),
     concurrencySystem,

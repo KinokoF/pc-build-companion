@@ -1,5 +1,5 @@
 {
-  "region": "it",
+  "regions": ["it"],
   "crawler": {
     "maxReqsPerMin": 10
   },
@@ -62,6 +62,7 @@
     }
   },
   "scraping": {
+    "legacySearch": false,
     "priceIncludingShipping": true
   },
   "out": {

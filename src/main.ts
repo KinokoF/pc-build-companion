@@ -1,23 +1,46 @@
+import { program } from "commander";
+import { log } from "console";
 import { sleep } from "crawlee";
 import { cleanUp } from "./clean-up.js";
+import { initOllama } from "./init-ollama.js";
 import { printBanner } from "./print-banner.js";
 import { printFilter } from "./print-filter.js";
+import { readConfig } from "./read-config.js";
 import { runCrawler } from "./run-crawler.js";
-import { CONFIG } from "./utils/constants.js";
+import { state } from "./state.js";
 import { writeFiles } from "./write-files.js";
 
-printBanner();
+program
+  .option("-c, --cleanup", "Delete out.dir on startup")
+  .argument("[config-path]", "Config file path", "config.json")
+  .parse();
 
-printFilter();
+const config = readConfig();
 
-cleanUp();
+printBanner(config);
+
+printFilter(config);
+
+if (program.opts().cleanup) {
+  cleanUp(config);
+}
+
+const ollama = initOllama(config);
 
 do {
-  await runCrawler();
+  for (const region of config.regions) {
+    log(`Processing region ${region}...`);
 
-  writeFiles();
+    state.products = [];
 
-  if (CONFIG.loop?.enable) {
-    await sleep((CONFIG.loop.interval ?? 0) * 1_000);
+    await runCrawler(config, region, ollama);
+
+    writeFiles(config, region);
   }
-} while (CONFIG.loop?.enable);
+
+  if (config.loop.enable) {
+    log(`Waiting ${config.loop.interval}s...`);
+
+    await sleep(config.loop.interval * 1_000);
+  }
+} while (config.loop.enable);

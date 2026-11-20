@@ -1,4 +1,4 @@
-type Region = "de" | "fr" | "at" | "it" | "es";
+export type Region = "de" | "fr" | "at" | "it" | "es";
 
 interface Crawler {
   maxReqsPerMin?: number;
@@ -46,18 +46,19 @@ interface DriveFilter extends BaseFilter {
 }
 
 interface Filter {
-  cpu: CpuFilter;
-  gpu: GpuFilter;
-  ssd: DriveFilter;
-  hdd: DriveFilter;
+  cpu?: CpuFilter;
+  gpu?: GpuFilter;
+  ssd?: DriveFilter;
+  hdd?: DriveFilter;
 }
 
 interface Scraping {
+  legacySearch?: boolean;
   priceIncludingShipping?: boolean;
 }
 
 interface Out {
-  dir: string;
+  dir?: string;
   filename?: string;
   json?: boolean;
   csv?: boolean;
@@ -70,8 +71,8 @@ interface Loop {
   interval?: number;
 }
 
-export interface Config {
-  region: Region;
+export interface ProvidedConfig {
+  regions: Region[];
   crawler?: Crawler;
   ollama?: Ollama;
   filter: Filter;
@@ -79,3 +80,19 @@ export interface Config {
   out: Out;
   loop?: Loop;
 }
+
+interface DefaultOut {
+  dir: string;
+  filename: string;
+}
+
+interface DefaultLoop {
+  interval: number;
+}
+
+export interface DefaultConfig {
+  out: DefaultOut;
+  loop: DefaultLoop;
+}
+
+export type Config = DefaultConfig & ProvidedConfig;
