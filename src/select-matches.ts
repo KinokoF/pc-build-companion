@@ -1,6 +1,7 @@
 import { log } from "console";
 import inquirer from "inquirer";
 import { Ollama } from "ollama";
+import z from "zod";
 import { Config } from "./models/config.model.js";
 import { NormComponent } from "./models/state.model.js";
 
@@ -8,6 +9,8 @@ interface Candidate {
   name: string;
   url: string;
 }
+
+const UINT32_ARRAY = z.uint32().array();
 
 export async function selectMatches(
   config: Config,
@@ -23,7 +26,7 @@ export async function selectMatches(
     log(`Asking ${config.ollama.model}...`);
 
     const prompt =
-      "Return ONLY the comma-separated indexes of the following products that match the given component. When the component is an SSD or HDD, make sure its size appears in the product name. Return -1 if there is no match.\n\n" +
+      "Return only the indexes of the following products that match the given component. When the component is an SSD or HDD, make sure its size appears in the product name. Do not return anything if there are no matches.\n\n" +
       "GIVEN COMPONENT\n" +
       compDetails +
       "\n\n" +
@@ -36,13 +39,13 @@ export async function selectMatches(
       model: config.ollama.model,
       messages: [{ role: "user", content: prompt }],
       think: config.ollama.think,
+      format: z.toJSONSchema(UINT32_ARRAY),
     });
 
     log("Response: " + res.message.content);
 
-    const indexes = res.message.content.match(/^\d+(,\d+)*$/)
-      ? res.message.content.split(",").map((s) => +s)
-      : [];
+    const data = JSON.parse(res.message.content);
+    const indexes = UINT32_ARRAY.parse(data);
 
     return candidates.filter((_, i) => indexes.includes(i));
   } else {
