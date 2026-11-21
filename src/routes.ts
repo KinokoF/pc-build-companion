@@ -226,18 +226,18 @@ export function getRouter(
 
     log(`Scraping Idealo search results for ${component.name}...`);
 
-    const resultSelector = IDEALO_RESULTS_SELECTOR.replaceAll(
+    const resultsSelector = IDEALO_RESULTS_SELECTOR.replaceAll(
       "{IDEALO_PREFIX_URL}",
       getIdealoPrefixUrl(region),
     );
-    const resultsLocator = page.locator(resultSelector);
+    const resultsLocator = page.locator(resultsSelector);
     const noResultsLocator = page.locator(IDEALO_NO_RESULTS_SELECTOR);
 
     if (await existsLocator(resultsLocator)) {
       const candidates = [];
 
-      for (const elem of await page.$$(resultSelector)) {
-        const name = (await elem.innerText())!;
+      for (const elem of await resultsLocator.all()) {
+        const name = await elem.innerText();
         const url = (await elem.getAttribute("href"))!;
 
         candidates.push({ name, url });
