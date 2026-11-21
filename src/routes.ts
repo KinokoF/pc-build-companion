@@ -14,12 +14,13 @@ import {
   EN_US_NUMBER_PARSER,
   IDEALO_CATS,
   IDEALO_EMPTY_SELECTOR,
+  IDEALO_FORM_RESULTS_SELECTOR,
+  IDEALO_HREF_RESULTS_SELECTOR,
   IDEALO_NO_RESULTS_SELECTOR,
   IDEALO_PREFIX_PATH,
   IDEALO_PRICE_EXCL_SHIPPING_SELECTOR,
   IDEALO_PRICE_INCL_SHIPPING_SELECTOR,
   IDEALO_PRICE_SUFFIX,
-  IDEALO_RESULTS_SELECTOR,
   IDEALO_SUGGEST_LIMIT,
   REGION_DATA,
 } from "./utils/constants.js";
@@ -226,21 +227,36 @@ export function getRouter(
 
     log(`Scraping Idealo search results for ${component.name}...`);
 
-    const resultsSelector = IDEALO_RESULTS_SELECTOR.replaceAll(
+    const hrefResultsSelector = IDEALO_HREF_RESULTS_SELECTOR.replaceAll(
       "{IDEALO_PREFIX_URL}",
       getIdealoPrefixUrl(region),
     );
-    const resultsLocator = page.locator(resultsSelector);
+    const formResultsSelector = IDEALO_FORM_RESULTS_SELECTOR.replaceAll(
+      "{REGION}",
+      region,
+    );
+    const hrefResultsLocator = page.locator(hrefResultsSelector);
+    const formResultsLocator = page.locator(formResultsSelector);
     const noResultsLocator = page.locator(IDEALO_NO_RESULTS_SELECTOR);
 
-    if (await existsLocator(resultsLocator)) {
+    if (
+      (await existsLocator(hrefResultsLocator)) ||
+      (await existsLocator(formResultsLocator))
+    ) {
       const candidates = [];
 
-      for (const elem of await resultsLocator.all()) {
+      for (const elem of await hrefResultsLocator.all()) {
         const name = await elem.innerText();
         const url = (await elem.getAttribute("href"))!;
 
-        candidates.push({ name, url });
+        candidates.push({ type: "href", name, url });
+      }
+
+      for (const elem of await formResultsLocator.all()) {
+        const name = await elem.innerText();
+        const value = await elem.locator("input[name='value']").inputValue();
+
+        candidates.push({ type: "form", name, value });
       }
 
       candidates.sort((a, b) => a.name.localeCompare(b.name));
@@ -253,17 +269,23 @@ export function getRouter(
       );
 
       if (selection.length) {
-        const reqs = selection.map((s) => ({
-          url: s.url,
-          label: "idealo-price",
-          userData: {
-            ...component,
-            idealoName: s.name,
-            idealoUrl: s.url,
-          },
-        }));
+        const reqs = selection.map((s) =>
+          s.type === "href"
+            ? {
+                url: s.url,
+                label: "idealo-price",
+                userData: { ...component, idealoName: s.name },
+              }
+            : {
+                url: `https://www.idealo.${region}/ipc/prg`,
+                method: "POST",
+                payload: `value=${s.value}`,
+                label: "idealo-price",
+                userData: { ...component, idealoName: s.name },
+              },
+        );
 
-        await addRequests(reqs);
+        await addRequests(reqs as any);
       } else {
         log("No selection :c");
       }
@@ -304,11 +326,7 @@ export function getRouter(
           const reqs = selection.map((s) => ({
             url: s.url,
             label: "idealo-price",
-            userData: {
-              ...component,
-              idealoName: s.name,
-              idealoUrl: s.url,
-            },
+            userData: { ...component, idealoName: s.name },
           }));
 
           await addRequests(reqs);
@@ -344,7 +362,7 @@ export function getRouter(
 
       log("Price: " + idealoPrice);
 
-      state.products.push({ ...product, idealoPrice });
+      state.products.push({ ...product, idealoUrl: page.url(), idealoPrice });
     } else if (await existsLocator(emptyLocator)) {
       log("Not available :c");
     } else {

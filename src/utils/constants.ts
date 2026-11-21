@@ -164,8 +164,10 @@ export const IDEALO_PRICE_SUFFIX = {
   gb: "incl. delivery",
 };
 
-export const IDEALO_RESULTS_SELECTOR =
+export const IDEALO_HREF_RESULTS_SELECTOR =
   ".resultList__content [href^='{IDEALO_PREFIX_URL}']";
+export const IDEALO_FORM_RESULTS_SELECTOR =
+  ".resultList__content [action='https://www.idealo.{REGION}/ipc/prg']";
 export const IDEALO_NO_RESULTS_SELECTOR =
   ".resultList__content [data-testid='empty-result']";
 

@@ -25,9 +25,12 @@ interface NormDrive extends NormEntry, Drive {
 
 export type NormComponent = NormCpu | NormGpu | NormDrive;
 
-export type Product = NormComponent & { idealoName: string; idealoUrl: string };
+export type Product = NormComponent & { idealoName: string };
 
-export type PricedProduct = Product & { idealoPrice: number };
+export type PricedProduct = Product & {
+  idealoUrl: string;
+  idealoPrice: number;
+};
 
 export interface State {
   products: PricedProduct[];

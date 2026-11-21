@@ -7,17 +7,16 @@ import { NormComponent } from "./models/state.model.js";
 
 interface Candidate {
   name: string;
-  url: string;
 }
 
 const UINT32_ARRAY = z.uint32().array();
 
-export async function selectMatches(
+export async function selectMatches<T extends Candidate>(
   config: Config,
   ollama: Ollama,
   component: NormComponent,
-  candidates: Candidate[],
-): Promise<Candidate[]> {
+  candidates: T[],
+): Promise<T[]> {
   const compDetails = Object.entries(component)
     .map(([k, v]) => `${k}: ${v}`)
     .join("\n");
@@ -51,7 +50,7 @@ export async function selectMatches(
   } else {
     log("COMPONENT DETAILS\n" + compDetails);
 
-    const answers = await inquirer.prompt<{ candidates: Candidate[] }>([
+    const answers = await inquirer.prompt<{ candidates: T[] }>([
       {
         type: "checkbox",
         message: "Select the products that match the given component",
