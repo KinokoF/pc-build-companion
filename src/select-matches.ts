@@ -23,7 +23,7 @@ export async function selectMatches(
     log(`Asking ${config.ollama.model}...`);
 
     const prompt =
-      "Return ONLY the comma-separated indexes of the following products that match the given component. When the given component is an SSD or HDD, pay attention to its size when identifying the match(es). Return -1 if there is no match.\n\n" +
+      "Return ONLY the comma-separated indexes of the following products that match the given component. When the component is an SSD or HDD, make sure its size appears in the product name. Return -1 if there is no match.\n\n" +
       "GIVEN COMPONENT\n" +
       compDetails +
       "\n\n" +
