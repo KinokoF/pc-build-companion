@@ -2,44 +2,77 @@
 
 > A simple tool for retrieving scores and prices for CPUs, GPUs, SSDs, and HDDs!
 
-PC Build Companion helps you pick the parts for your next PC. It downloads the benchmark charts published by [PassMark](https://www.passmark.com/), keeps only the components that match your filters, looks up what they currently cost on the [idealo](https://www.idealo.de/) price comparison site, and ranks them by value for money — so you can see at a glance which parts give you the most performance (or storage) per euro.
+PC Build Companion helps you choose the parts for a PC build by answering one question: **which components give you the most performance for your money right now?**
 
-A run on SSDs, for example, saves a ranking like this one as a text file, and also as JSON, CSV and a scatter plot:
+It takes benchmark scores from [PassMark](https://www.passmark.com/), finds the matching products and their current prices on the European price-comparison site [idealo](https://www.idealo.de/), and ranks everything by score-to-price ratio. The results are saved as JSON, CSV, plain text and scatter plots.
 
-```text
-Corsair MP700 Pro XT
-https://www.idealo.it/confronta-prezzi/208341761/corsair-mp700-pro-xt.html
-Disk Mark: 93265; Price: 438; Ratio: 212.9
+## Live example
 
-MSI Spatium M571 DLP 4TB
-https://www.idealo.it/confronta-prezzi/209535513/msi-spatium-m571-dlp-4tb.html
-Disk Mark: 94742; Price: 824.6; Ratio: 114.9
-```
+Want to see the results before installing anything? My own config and the outputs it generates (JSON, CSV, TXT and plots) are published at **[https://serverchan.org/pbc.html](https://serverchan.org/pbc.html)** and updated daily.
+
+## Contents
+
+- [Features](#features)
+- [How it works](#how-it-works)
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Quick start](#quick-start)
+- [Usage](#usage)
+- [Configuration](#configuration)
+- [Output](#output)
+- [Good to know](#good-to-know)
+- [Troubleshooting](#troubleshooting)
+- [Disclaimer](#disclaimer)
+- [Built with](#built-with)
+- [License](#license)
 
 ## Features
 
-- **Four component types** — CPUs, GPUs, SSDs and HDDs, each with its own filters and each individually switchable.
-- **Flexible filters** — year, category, socket, video memory, capacity and benchmark score ranges, plus sorting and a per-type limit.
-- **Six idealo regions** — Germany, France, Austria, Italy, Spain and UK.
-- **AI-assisted product matching** — a large language model (LLM) served by [Ollama](https://ollama.com/) decides which idealo listings actually correspond to a benchmarked component. Prefer to stay in control? Turn it off and pick the listings yourself from an interactive checklist.
-- **Value ranking** — every priced product gets a score-to-price ratio, and results are sorted best value first.
-- **Multiple output formats** — JSON, CSV, plain text and a PNG scatter plot of price against score.
-- **Rate-limited crawling** — one page at a time, with an optional requests-per-minute cap.
+- **Four component types** — CPUs, GPUs, SSDs and HDDs, each with its own filter (year, category, socket, VRAM, capacity, score range).
+- **Benchmark scores from PassMark** — taken from its public CPU, video card and drive lists.
+- **Current prices from idealo** — for Germany, France, Austria, Italy and Spain, with or without shipping costs.
+- **Automatic product matching** — an LLM served by [Ollama](https://ollama.com/) decides which shop products correspond to each benchmarked component. No LLM? Pick the matches yourself from an interactive list.
+- **Ready-to-use results** — a ranking by score-to-price ratio as JSON, CSV and TXT, plus a PNG scatter plot of score versus price.
+- **Loop mode** — keep the tool running: when a run is finished, it pauses for as long as you choose (a day, for example) and then starts over.
+- **One page at a time** — pages are loaded sequentially, and `crawler.maxReqsPerMin` can cap how many are loaded per minute (there is no cap unless you set it).
 
 ## How it works
 
-1. **Benchmarks** — the PassMark chart of every enabled component type is downloaded ([cpubenchmark.net](https://www.cpubenchmark.net/), [videocardbenchmark.net](https://www.videocardbenchmark.net/), [harddrivebenchmark.net](https://www.harddrivebenchmark.net/)).
-2. **Filter** — your filters are applied, the remaining entries are sorted, and only the first `limit` entries are kept.
-3. **Search** — each remaining component is looked up by name on idealo. Of the suggestions returned (the tool asks for up to 100), only the product pages in the right category (processors, graphics cards, SSDs or hard drives) are kept as candidates.
-4. **Match** — the candidates that really correspond to the component are selected, either by an Ollama model or by you (see [Product matching](#product-matching)).
-5. **Price** — each selected product page is opened and its best total price (shipping included) is read.
-6. **Report** — the score-to-price ratio is computed and the results are written to the output directory (see [Output](#output)).
+```text
+PassMark lists → filter / sort / limit
+  → idealo search → match (LLM or you)
+  → idealo price → rank
+  → JSON / CSV / TXT / PNG
+```
+
+1. **Download the benchmark lists.** For every enabled component type, the tool opens the corresponding PassMark "Mega List" in a headless browser and downloads the complete list behind it.
+2. **Filter, sort and limit.** The list is narrowed down with your [filter](#filter), sorted, and optionally cut to the first _N_ entries.
+3. **Search idealo.** Each remaining component is looked up by name on idealo, inside the right category (CPUs, graphics cards, SSDs or hard drives) of the selected region.
+4. **Match products.** The search results are compared with the component to decide which products really correspond to it. An LLM does this through Ollama; without it, you tick the right products in an interactive list. See [Matching products](#matching-products).
+5. **Read the price.** The idealo page of each matched product is opened to read its price, with or without shipping (see [`scraping`](#scraping)). Products that have no offers are skipped.
+6. **Rank and export.** For each component type, the products are ranked by `ratio = score / price` and written to the output directory.
+
+The score depends on the component type:
+
+| Type | Score | PassMark source |
+| --- | --- | --- |
+| CPU | CPU Mark | [CPU Mega List](https://www.cpubenchmark.net/CPU_mega_page.html) |
+| GPU | G3D Mark | [Video Card Mega List](https://www.videocardbenchmark.net/GPU_mega_page.html) |
+| SSD | Disk Mark | [Drive Mega List](https://www.harddrivebenchmark.net/hdd-mega-page.html) |
+| HDD | Capacity, in GB | [Drive Mega List](https://www.harddrivebenchmark.net/hdd-mega-page.html) |
+
+HDDs are ranked by capacity rather than speed, so their ratio reads as "gigabytes per euro".
 
 ## Requirements
 
-- **[Node.js](https://nodejs.org/)** with npm: version 22.22.2 or later in the 22.x line, 24.15.0 or later in the 24.x line, or any version from 26 on. This is the range accepted by the dependencies (`^22.22.2 || ^24.15.0 || >=26.0.0`); the tool itself has only been tested with Node.js 26.13.
-- **Windows, macOS 14 or later, or Linux** (Ubuntu 22.04+, Debian 12+ or a comparable distribution) on a 64-bit (x64 or arm64) machine — some dependencies are native modules shipped as prebuilt binaries, and the browser used for crawling is available for these systems only.
-- **[Ollama](https://ollama.com/)** (optional) — a program that runs LLMs on your own computer or server. It is only needed for automatic product matching, which the bundled `config.json` has switched on (see [Usage](#usage)). The model you configure must be available on the Ollama server (`ollama pull <model>`).
+- **[Node.js](https://nodejs.org/)** with npm: version 22.22.2 or later on the 22.x line, 24.15 or later on the 24.x line, or 26 and later.
+- **Windows, macOS or Linux**, on x64 or arm64, in a version [supported by Playwright](https://playwright.dev/docs/intro#system-requirements): currently Windows 11 or Windows Server 2019 and later, macOS 14 and later, Debian 12 or 13, Ubuntu 22.04, 24.04 or 26.04. On older systems such as macOS 13, Ubuntu 20.04 or Debian 11, `npm install` fails, because there is no browser build for them.
+- **About 1.5 GB of disk space**, most of it for the browsers that `npm install` downloads (see [Installation](#installation)).
+- **[Ollama](https://ollama.com/)** (optional) — only for automatic product matching:
+  - Any Ollama server that the tool can reach will do, on the same machine or on another one, provided that the model you want to use has already been pulled there (`ollama pull <model>`).
+  - A server on another machine must accept network connections first: by default Ollama only listens on `127.0.0.1` (see [How can I expose Ollama on my network?](https://docs.ollama.com/faq#how-can-i-expose-ollama-on-my-network)).
+  - Use a model that the server runs itself: the tool relies on [structured outputs](https://docs.ollama.com/capabilities/structured-outputs), which Ollama's cloud models currently don't support.
+  - Ollama 0.5 or later is required; the `think` option needs 0.9 or later, and 0.11 or later when it is set to a level such as `"high"`.
 
 ## Installation
 
@@ -49,397 +82,333 @@ cd pc-build-companion
 npm install
 ```
 
-`npm install` also downloads Playwright's browsers (Chromium, Firefox and WebKit), through a `postinstall` script that runs the Playwright installer. The tool itself only uses Chromium, in headless mode: no browser window opens while it works. The browsers end up in Playwright's own per-user cache, not in the project directory, and take a fair amount of disk space (about 1.3 GB on Windows), so the first install can take a while.
+`npm install` also downloads Playwright's default browsers (Chromium, Firefox and WebKit): a download of roughly 500 MB that takes about 1.3 GB once unpacked, so the first installation can take a few minutes. The tool itself only uses Chromium. The browsers are stored outside the project, in [Playwright](https://playwright.dev/)'s per-user cache (`%LOCALAPPDATA%\ms-playwright` on Windows, `~/Library/Caches/ms-playwright` on macOS, `~/.cache/ms-playwright` on Linux), so deleting the project directory doesn't remove them.
 
-On Linux, the browser may also need system libraries that `npm install` does not provide: `npx playwright install-deps` installs them.
+On Linux the browser also relies on a number of system libraries. If it fails to start, run `npx playwright install-deps chromium` in the project directory: on Debian and Ubuntu it installs them, asking for your sudo password.
 
-## Usage
+## Quick start
 
-> [!IMPORTANT]
-> The bundled `config.json` has automatic product matching switched on (`ollama.enable` is `true`, with the model `gemma4:12b`). Before your first run, either make sure an Ollama server is running and has that model (`ollama pull gemma4:12b`), or set `ollama.enable` to `false` to select the products yourself (see [Product matching](#product-matching)). Otherwise the matching step fails for every component and the run ends without results.
-
-1. Adjust [`config.json`](config.json) to your needs (see [Configuration](#configuration)) — at the very least `region` (the bundled file searches idealo.it), the `ollama` settings and the filters of the component types you are interested in.
-2. Run the tool:
+1. Open [`config.json`](config.json). As shipped, it asks idealo.it for prices and expects an Ollama server on this machine (`http://127.0.0.1:11434`) with the model `gemma4:12b` and thinking enabled. Adapt it to your setup:
+   - set `regions` to the idealo site(s) you want prices from: `de`, `fr`, `at`, `it` or `es`, for example `["de"]` or `["de", "at"]`;
+   - set `ollama.model` to a model available on your Ollama server (and remove `think` if that model doesn't support thinking), **or** set `ollama.enable` to `false` to pick the matching products by hand;
+   - if your Ollama server runs on another machine or port, rename `__host` to `host` and set it to the server's address, port included, for example `http://192.168.1.50:11434`.
+2. Start the tool:
 
    ```bash
    npm start
    ```
 
-At startup the tool prints the settings and the search filters it is going to use, then logs its progress while it works. When the run is complete, the results are in the directory set in `out.dir` (`out/` in the bundled `config.json`). They are not printed in the terminal: the last line of a completed run is `Writing JSONs/CSVs/TXTs/plots...`, and the files written are not listed (see [Output](#output)). The line `Finished! Total … requests: … succeeded, … failed.` just above it shows whether any page or step had to be given up (see [Troubleshooting](#troubleshooting)).
+3. Find the results in the `out` directory.
 
-> [!NOTE]
-> Results are kept in memory and written only at the very end of the run. If the tool ends with an error, the prices collected so far are lost. If you stop it with Ctrl+C, the products priced up to that moment may still be written, but that is not guaranteed — so try your settings with a small [`limit`](#filter) first.
+The sample config keeps `limit` at `1` for every component type, so the first run only looks up one CPU, one GPU, one SSD and one HDD: enough to check that everything works. Raise or remove `limit` once it does.
 
-### Commands
+What to expect: the tool prints its configuration and filters, then its progress (`Scraping CPUs...`, `Scraping Idealo search results for …`, the matching step, `Scraping Idealo price for …` and `Price: …`). With Ollama, the matching step shows `Asking <model>...`, the prompt and the model's `Response:`; with Ollama disabled, it shows the list of products to choose from instead. A run ends with `Finished! Total N requests: X succeeded, Y failed.` and `Writing JSONs/CSVs/TXTs/plots...`. A warning about `ImpitHttpClient` right after the start is normal. So are long pauses without any output: the sample config loads at most 10 pages per minute, and with `think` enabled the model can take minutes to answer each prompt, so even this small run can take several minutes. Set `think` to `false` for a faster first test.
 
-| Command                              | Description                                                               |
-| ------------------------------------ | ------------------------------------------------------------------------- |
-| `npm start` (or `npm run start:dev`) | Runs the tool straight from the TypeScript sources.                       |
-| `npm run build`                      | Compiles the TypeScript sources to `dist/`.                               |
-| `npm run start:prod`                 | Runs the compiled build (`dist/main.js`). Requires `npm run build` first. |
-
-`config.json` is always read from the project root at startup, so changing it never requires a rebuild. `npm run build` type-checks the file, though, and can report an error (`TS2352`) for settings that `npm start` accepts — for example an `ollama` section without `model`, so keep that key even when `ollama.enable` is `false`.
-
-### Cleaning up previous results
-
-Every run writes a new set of timestamped files, so results accumulate in the output directory. Pass the `do-clean-up` argument to delete the output directory before the run starts. The argument is the bare word, without leading dashes; the `--` in the command below belongs to npm, which hands whatever follows it to the tool:
+## Usage
 
 ```bash
-npm start -- do-clean-up
+# Run with ./config.json
+npm start
+
+# Run with another config file
+npm start -- path/to/my-config.json
+
+# Delete the output directory before starting
+npm run start:dev -- --cleanup
+npm run start:dev -- --cleanup path/to/my-config.json
 ```
 
+Options such as `--cleanup` must be passed through `npm run start:dev -- …`. `npm start` is only a shortcut for that script: with `npm start -- --cleanup`, npm takes the option for itself and, depending on the npm version, the tool starts without cleaning up or doesn't start at all.
+
 > [!WARNING]
-> The whole directory is removed, including any file in it that the tool did not create, so point `out.dir` at a directory used only for these results. The deletion happens before the crawl: if the run then prices nothing, fails or is interrupted, the previous results are gone and nothing, or at most a partial result, replaces them.
+> `--cleanup` deletes the whole `out.dir` directory with everything in it, without asking, and not only the files written by the tool. Point `out.dir` at a directory that is used for nothing else.
+
+To run the compiled JavaScript instead of the TypeScript sources:
+
+```bash
+npm run build
+npm run start:prod
+npm run start:prod -- --cleanup path/to/my-config.json
+```
+
+### Command line
+
+```text
+Usage: main [options] [config-path]
+
+Arguments:
+  config-path    Config file path (default: "config.json")
+
+Options:
+  -c, --cleanup  Delete out.dir on startup
+  -h, --help     display help for command
+```
+
+Relative paths — the config path and `out.dir` — are resolved against the working directory, which is the project root whenever the tool is started through npm.
+
+### Matching products
+
+A benchmark entry and a shop listing rarely share the same name: PassMark knows a `Radeon RX 9060 XT 16GB`, while idealo lists many cards from different manufacturers built around it. Someone has to decide which search results really are the component being looked up.
+
+- **With Ollama** (`ollama.enable` set to `true`) — the component's data and the numbered list of candidate products are sent to the configured model, which answers with the numbers of the products that match. The prompt and the answer are printed to the console, so you can always see what was asked and what was picked. This mode needs no interaction: it is the one to use for unattended and looping runs.
+- **Without Ollama** — the candidates are shown as a checkbox list in the terminal. Products whose name is identical to the component's are pre-selected. Move with the arrow keys, toggle with <kbd>Space</kbd> (<kbd>a</kbd> toggles all, <kbd>i</kbd> inverts the selection) and confirm with <kbd>Enter</kbd>; confirming an empty selection skips the component. This mode needs an interactive terminal.
+
+One component can match several products (different manufacturers, boxed and tray versions, …). Each match whose price can be read becomes a row of its own in the results, with the same score and its own price.
 
 ## Configuration
 
-All settings live in [`config.json`](config.json), in the project root. The file must be plain JSON: no comments, no trailing commas.
+The tool is configured through a JSON file: `config.json` in the working directory by default, or the file passed on the [command line](#command-line). Besides the sample [`config.json`](config.json) in this repository, you can look at the config I actually use on the [live example page](https://serverchan.org/pbc.html).
+
+A small but complete example:
 
 ```json
 {
-  "region": "it",
-  "crawler": {
-    "maxReqsPerMin": 10
-  },
-  "ollama": {
-    "enable": true,
-    "model": "gemma4:12b",
-    "think": true,
-    "timeout": 1800
-  },
+  "regions": ["it"],
+  "crawler": { "maxReqsPerMin": 10 },
+  "ollama": { "enable": true, "model": "gemma4:12b", "think": true, "timeout": 1800 },
   "filter": {
     "cpu": {
       "enable": true,
       "sort.by": "normCpumark",
       "sort.direction": "desc",
-      "limit": 1,
+      "limit": 10,
       "year.min": 2022,
       "category": "Desktop",
-      "sockets": ["AM5", "FCLGA1851"],
+      "sockets": ["AM5", "AM5 (LGA 1718)", "FCLGA1851"],
       "cpumark.min": 20000
     },
     "gpu": {
       "enable": true,
       "sort.by": "normG3d",
       "sort.direction": "desc",
-      "limit": 1,
+      "limit": 10,
       "year.min": 2022,
       "category": "Desktop",
       "vram.min": 15000,
       "g3d.min": 15000
-    },
-    "ssd": {
-      "enable": true,
-      "sort.by": "normDiskmark",
-      "sort.direction": "desc",
-      "limit": 1,
-      "year.min": 2022,
-      "size.min": 3000,
-      "size.max": 5000,
-      "diskmark.min": 20000
-    },
-    "hdd": {
-      "enable": true,
-      "sort.by": "normSize",
-      "sort.direction": "desc",
-      "limit": 1,
-      "year.min": 2022,
-      "size.min": 15000
     }
   },
-  "out": {
-    "dir": "out",
-    "json": true,
-    "csv": true,
-    "txt": true,
-    "plot": true
-  }
+  "scraping": { "priceIncludingShipping": true },
+  "out": { "json": true, "csv": true, "txt": true, "plot": true }
 }
 ```
 
-These are the active settings of the bundled `config.json`. They look up one component per type on idealo.it, in each case among the components first benchmarked in 2022 or later:
-
-- the fastest desktop CPU for the AM5 or LGA 1851 socket;
-- the fastest desktop GPU with at least 15000 MB of video memory;
-- the fastest SSD between 3000 and 5000 GB (the "4 TB" class);
-- the largest hard drive.
+With this config the tool looks up, on idealo.it, the 10 fastest desktop CPUs for the AM5 and LGA 1851 sockets, and the 10 fastest desktop GPUs with at least 15000 MB of VRAM (that is, 16 GB cards and up). In both cases only components first benchmarked in 2022 or later are considered, with a minimum score of 20000 (CPU Mark) and 15000 (G3D Mark). SSDs and HDDs are skipped because they have no filter. Products are matched by the `gemma4:12b` model with thinking enabled, on an Ollama server at the default address, with up to 30 minutes (1800 seconds) per answer, and at most 10 pages are loaded per minute. Prices include shipping, and all four output formats are written to `out`.
 
 > [!TIP]
-> JSON has no comments, so the bundled `config.json` "comments out" optional settings by prefixing their key with a double underscore (for example `"__year.max": 2099`). Such keys are simply never read: to activate a setting, remove the prefix and replace the placeholder value with your own.
+> JSON has no comments, but keys that the tool doesn't know are simply ignored. The sample config uses this to keep optional settings at hand: a key prefixed with `__` (for example `"__year.max": 2099`) is switched off; remove the prefix to switch it on.
+>
+> The other side of the coin: the config is not validated. A misspelled optional key is silently ignored, while a missing or misspelled `regions` or `filter` stops the tool at startup with a raw JavaScript error instead of a clear message (see [Troubleshooting](#troubleshooting)).
 
-`config.json` is not validated: unknown or misspelled keys are silently ignored. The summary printed at startup helps to spot them — a setting you meant to set but that is shown as `<unset>` (`undefined` for `region` and `out.dir`) was not recognized.
+### `regions`
 
-A note on notation: in this README, a dotted name such as `ollama.enable` or `out.dir` is shorthand for a key inside a section (`enable` inside `ollama`, `dir` inside `out`). Only in the [`filter`](#filter) sections is the dot part of the key name itself: `"year.min": 2022` is a single flat key.
+**Required.** The list of idealo sites to get prices from. The whole process is repeated for each region, one after the other. Only these five codes work:
 
-### `region`
-
-**Required.** Selects the idealo site used for searching and pricing. Prices are always in euros.
-
-| Value | Site                                      | Country |
-| ----- | ----------------------------------------- | ------- |
-| `de`  | [idealo.de](https://www.idealo.de/)       | Germany |
-| `fr`  | [idealo.fr](https://www.idealo.fr/)       | France  |
-| `at`  | [idealo.at](https://www.idealo.at/)       | Austria |
-| `it`  | [idealo.it](https://www.idealo.it/)       | Italy   |
-| `es`  | [idealo.es](https://www.idealo.es/)       | Spain   |
-| `uk`  | [idealo.co.uk](https://www.idealo.co.uk/) | UK      |
-
-Only these six values are supported, exactly as written (in lower case). The value is not checked at startup: with any other value the benchmark charts are still downloaded, but every idealo search fails and no price is collected.
+| Region | Site | Currency |
+| --- | --- | --- |
+| `de` | idealo.de | EUR |
+| `fr` | idealo.fr | EUR |
+| `at` | idealo.at | EUR |
+| `it` | idealo.it | EUR |
+| `es` | idealo.es | EUR |
 
 ### `crawler`
 
-Optional.
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `maxReqsPerMin` | number | no limit | Maximum number of pages loaded per minute, PassMark and idealo together. It must be a whole number of at least 1; leave the key out for no limit. |
 
-| Key             | Type        | Default  | Description                                                                                                                                                 |
-| --------------- | ----------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `maxReqsPerMin` | integer ≥ 1 | no limit | Maximum number of pages loaded per minute. Omit the key for no limit; `0`, negative and fractional values are rejected with an error when the crawl starts. |
-
-Pages are always loaded one at a time, whatever the value. The cap is applied over a rolling 60-second window, not by spacing the requests evenly: the tool loads up to `maxReqsPerMin` pages in a row and then waits, without logging anything, until the window frees up. With a low value, pauses of up to a minute are therefore normal. Retries count as page loads too (see [Troubleshooting](#troubleshooting)).
+Pages are always loaded one at a time. The limit is a rolling 60-second budget rather than an even delay: with `10`, the crawler may load 10 pages back to back and then pause until the minute has passed.
 
 ### `ollama`
 
-Optional. Controls the automatic [product matching](#product-matching).
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enable` | boolean | `false` | Match products with an LLM. Otherwise you select the matches yourself (see [Matching products](#matching-products)). |
+| `host` | string | `http://127.0.0.1:11434` | Address of the Ollama server. Always include the port, as in `http://192.168.1.50:11434`. The `OLLAMA_HOST` environment variable is not used. |
+| `model` | string | — | Name of the model, for example `gemma4:12b`. Required when `enable` is `true`. |
+| `think` | boolean or string | model default | Thinking mode: `true` or `false`, or a level (`"low"`, `"medium"`, `"high"`) for the models that support levels. When left out, the model's own default applies, which usually means that a model able to think does so. |
+| `timeout` | number | `300` | Maximum time, in whole seconds, to wait for the model's complete answer to one matching request, including model loading and thinking. It can't be switched off: `0` counts as not set. |
 
-| Key       | Type                                         | Default                  | Description                                                                                                                                                                                                                                                                                                                                                    |
-| --------- | -------------------------------------------- | ------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `enable`  | boolean                                      | `false`                  | Let an Ollama model select the matching products. When `false` or omitted, you are asked to select them yourself.                                                                                                                                                                                                                                              |
-| `host`    | string                                       | `http://127.0.0.1:11434` | Address of the Ollama server. When you give a full URL, include the port (e.g. `http://192.168.1.5:11434`). The `OLLAMA_HOST` environment variable is not read: this key is the only way to use another server.                                                                                                                                                |
-| `model`   | string                                       | —                        | Name of the model to use, e.g. `gemma4:12b`. Required when `enable` is `true`.                                                                                                                                                                                                                                                                                 |
-| `think`   | boolean \| `"low"` \| `"medium"` \| `"high"` | model default            | Turns reasoning ("thinking") on or off, or sets its level. Use it only with a model that supports thinking: for any other model, Ollama rejects `true` or a level with an error, so the matching fails for every component. If you change `model`, check that the new one supports thinking, or remove this key (the bundled `config.json` sets it to `true`). |
-| `timeout` | number (seconds)                             | `300` (5 minutes)        | How long to wait for the model's answer, in whole seconds. Raise it if you run a large model on slow hardware. `0` means the default, not "no timeout". A call that times out is retried up to three times, so a model that never answers can take four times this value per component.                                                                        |
+Two things to keep in mind about thinking:
+
+- It can take minutes per component on modest hardware. Raise `timeout` accordingly, or set `think` to `false` for speed.
+- Requesting it from a model that doesn't support thinking makes Ollama reject the request.
 
 ### `filter`
 
-**Required.** Contains one section per component type: `cpu`, `gpu`, `ssd` and `hdd`. All four sections must be present, or the tool does not start; to skip a type, set its `enable` key to `false` (or omit that key).
+**Required.** One object per component type: `cpu`, `gpu`, `ssd` and `hdd`. A type that is missing, or whose `enable` is not `true`, is skipped. The filter is applied to the PassMark list, before anything is requested from idealo.
 
-Keys available in every section:
+Keys such as `sort.by` or `year.min` are plain key names that contain a dot, not nested objects.
 
-| Key              | Type                | Default  | Description                                                                                                                                                               |
-| ---------------- | ------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `enable`         | boolean             | `false`  | Whether to process this component type.                                                                                                                                   |
-| `sort.by`        | string              | —        | Field used to sort the filtered components before `limit` is applied (see [Sorting](#sorting)).                                                                           |
-| `sort.direction` | `"asc"` \| `"desc"` | `"asc"`  | Sort direction.                                                                                                                                                           |
-| `limit`          | integer             | no limit | Maximum number of components to look up on idealo.                                                                                                                        |
-| `year.min`       | number              | —        | Earliest year (inclusive). The year is taken from PassMark's "Test Date", the date of the first benchmark submitted for the component — not necessarily its release date. |
-| `year.max`       | number              | —        | Upper bound for the year (exclusive): `2026` keeps components up to 2025.                                                                                                 |
+Keys common to all component types:
+
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enable` | boolean | `false` | Process this component type. |
+| `sort.by` | string | — | Field by which the filtered components are sorted before `limit` is applied (see below). Without it they keep PassMark's own order, which is alphabetical by name. |
+| `sort.direction` | `"asc"` or `"desc"` | `"asc"` | Sort direction. Anything other than the exact value `"desc"` sorts in ascending order. |
+| `limit` | number | no limit | Keep only the first _N_ components after sorting; only these are looked up on idealo. Use a whole number of at least 1, or leave the key out for no limit. |
+| `year.min` / `year.max` | number | — | Range for the year of the component's first benchmark on PassMark (the _Test Date_ column). |
 
 Additional keys for `cpu`:
 
-| Key                           | Type     | Description                                                                                                                                                |
-| ----------------------------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `category`                    | string   | Text that the PassMark category must contain, e.g. `"Desktop"`. Case-sensitive. PassMark's CPU categories are Desktop, Laptop, Server and Mobile/Embedded. |
-| `sockets`                     | string[] | Accepted sockets, exactly as named by PassMark, e.g. `["AM5", "FCLGA1851"]`.                                                                               |
-| `cpumark.min` / `cpumark.max` | number   | PassMark CPU Mark range.                                                                                                                                   |
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `category` | string | — | Text that the PassMark category must contain, for example `"Desktop"`. PassMark's CPU categories include `Desktop`, `Laptop`, `Server` and `Mobile/Embedded`. |
+| `sockets` | string[] | — | Accepted sockets. Each entry must be identical to a value of PassMark's _Socket_ column, for example `["AM5", "AM5 (LGA 1718)", "FCLGA1851"]` (see below). |
+| `cpumark.min` / `cpumark.max` | number | — | CPU Mark range. |
 
 Additional keys for `gpu`:
 
-| Key                     | Type   | Description                                                                                                                                    |
-| ----------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `category`              | string | Text that the PassMark category must contain, e.g. `"Desktop"`. Case-sensitive. PassMark's GPU categories are Desktop, Mobile and Workstation. |
-| `vram.min` / `vram.max` | number | Video memory range, in **MB** (16 GB = 16384).                                                                                                 |
-| `g3d.min` / `g3d.max`   | number | PassMark G3D Mark range.                                                                                                                       |
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `category` | string | — | Text that the PassMark category must contain, for example `"Desktop"`. PassMark's video card categories include `Desktop`, `Mobile` and `Workstation`. |
+| `vram.min` / `vram.max` | number | — | Video memory range, in MB (16 GB = 16384 MB). The cards whose memory size PassMark doesn't report (almost half of its list) count as `-1`: they never pass a `vram.min` and always pass a `vram.max` used on its own. |
+| `g3d.min` / `g3d.max` | number | — | G3D Mark range. |
 
 Additional keys for `ssd` and `hdd`:
 
-| Key                             | Type   | Description                                                    |
-| ------------------------------- | ------ | -------------------------------------------------------------- |
-| `size.min` / `size.max`         | number | Capacity range, in **GB** (see the note on drive sizes below). |
-| `diskmark.min` / `diskmark.max` | number | PassMark Disk Mark range.                                      |
-
-Filter keys are flat names that contain a dot (`"year.min": 2022`), not nested objects.
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `size.min` / `size.max` | number | — | Capacity range, in GB, as reported by PassMark (see below). |
+| `diskmark.min` / `diskmark.max` | number | — | Disk Mark range. |
 
 How filters behave:
 
-- **Ranges** — every `*.min` bound is inclusive and every `*.max` bound is exclusive. For example, `"size.min": 3000, "size.max": 5000` keeps drives from 3000 GB up to, but not including, 5000 GB.
-- **Optional filters** — a filter that is omitted is not applied, and neither is a range bound set to `0` or a `category` set to an empty string. `limit` and `sockets` are different: `"limit": 0` keeps no component at all and `"sockets": []` matches no CPU, so leave them out to switch them off.
-- **Order of operations** — components are filtered first, then sorted, then cut to `limit`. To price only the single fastest CPU that matches your filters, sort by `normCpumark` descending with `"limit": 1`.
-- **Mind the limit** — `limit` counts benchmark components, not result rows. Every component that survives it triggers a search on idealo and, if candidates are found, a matching step and one more page load for each matched product. Without a `limit`, a loose filter can produce a very long run.
-- **Video memory** — GPUs whose memory size is unknown to PassMark are excluded by `vram.min`, but not by `vram.max` alone.
-- **Drive sizes** — capacities are the ones reported by PassMark, converted with 1 TB = 1024 GB. PassMark reports the formatted capacity, so a drive sold as "4 TB" is listed as 3.6 TB or 3.7 TB depending on the model, i.e. 3686.4 GB or 3788.8 GB. Choose your `size.*` bounds accordingly.
+- **Ranges** — `*.min` is inclusive and `*.max` is exclusive: `"year.min": 2022, "year.max": 2025` keeps 2022, 2023 and 2024.
+- **Text** — `category` and `sockets` are case-sensitive. `category` only has to be contained in PassMark's value, whereas a socket must be identical to it. A component can belong to several categories (`Desktop, Server`): it is kept if any of them contains your text.
+- **Sockets** — PassMark doesn't always spell a socket the same way: at the time of writing, AM5 processors are listed partly as `AM5` and partly as `AM5 (LGA 1718)`, and LGA 1700 ones as `FCLGA1700`, `LGA 1700` or `LGA1700`. Look at the _Socket_ column of the [CPU Mega List](https://www.cpubenchmark.net/CPU_mega_page.html) and list every spelling you need; the names offered by PassMark's own socket filter are not always the values of that column. Processors whose socket PassMark doesn't know are listed as `Unknown`.
+- **Year** — the year is the one in which PassMark received the first benchmark of the component. It is usually close to the release year, but it can be later, especially for drives.
+- **Sorting and limiting** — `sort.by` and `limit` decide _which_ components are looked up, which keeps long runs under control: `"sort.by": "normCpumark", "sort.direction": "desc", "limit": 20` means "only the 20 fastest CPUs that pass the filter". The output files are always ranked by ratio, whatever the sort order.
+- **Sort fields** — use the numeric fields computed by the tool: `normCpumark` (CPU), `normG3d` and `normVram` (GPU), `normDiskmark` and `normSize` (SSD and HDD), and `normYear` (all types). The original PassMark fields can be used too, but most of them are text and are compared alphabetically. Field names are case-sensitive and are not checked: with a name that doesn't exist, nothing is sorted and no error is shown.
+- **Drive capacity** — PassMark reports capacities in binary units, so they are lower than the ones printed on the box: a 2 TB drive shows up as about 1843 or 1946 GB, a 4 TB drive as about 3686 or 3789 GB, an 8 TB drive as about 7475 GB. Set `size.min` roughly 10% below the nominal capacity: `1800` for "2 TB and up", `7000` for "8 TB and up".
 
-#### Sorting
+### `scraping`
 
-`sort.by` accepts the name of any field of a benchmark entry. The tool adds a few normalized, numeric fields that are the best candidates for sorting:
-
-| Component type | Field          | Meaning                                 |
-| -------------- | -------------- | --------------------------------------- |
-| all            | `normYear`     | Year                                    |
-| `cpu`          | `normCpumark`  | CPU Mark                                |
-| `gpu`          | `normG3d`      | G3D Mark                                |
-| `gpu`          | `normVram`     | Video memory, in MB (`-1` when unknown) |
-| `ssd`, `hdd`   | `normDiskmark` | Disk Mark                               |
-| `ssd`, `hdd`   | `normSize`     | Capacity, in GB                         |
-
-The original PassMark fields (such as `name`) can be used too, but most of them are text — including numbers like `"93,265"` — and text is sorted alphabetically, so prefer the normalized fields when sorting by a numeric value.
-
-Field names are case-sensitive and are not checked. If `sort.by` is omitted or does not match an existing field, the list is left in PassMark's order, so `limit` simply keeps the first matching entries. Likewise, `sort.direction` must be exactly `"desc"` to sort in descending order: any other value sorts ascending.
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `legacySearch` | boolean | `false` | Look for candidate products in idealo's search suggestions (up to 100) instead of its category search page. |
+| `priceIncludingShipping` | boolean | `false` | When `true`, use the best total price, shipping included. Otherwise use the price of the first offer listed on the product page (normally the cheapest), without shipping. |
 
 ### `out`
 
-**Required.** Sets where the results are written and in which formats (described in [Output](#output)).
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `dir` | string | `"out"` | Output directory. It is created if it doesn't exist. Give the tool a directory of its own, because `--cleanup` deletes it with everything in it. On Windows, write the path with forward slashes or doubled backslashes (`"C:/pbc/out"` or `"C:\\pbc\\out"`): a single backslash is an escape character in JSON. |
+| `filename` | string | `"{TYPE}s-{DATE}"` | File name template, without extension (see the placeholders below). |
+| `json` | boolean | `false` | Write a JSON file. |
+| `csv` | boolean | `false` | Write a CSV file. |
+| `txt` | boolean | `false` | Write a text file. |
+| `plot` | boolean | `false` | Write a PNG scatter plot. |
 
-| Key    | Type    | Default | Description                                                                                                                                                                                                                                |
-| ------ | ------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `dir`  | string  | —       | **Required.** Output directory. A relative path is resolved from the project root. The directory is created if missing, but its parent directory must already exist — otherwise the run fails at the very end, when the files are written. |
-| `json` | boolean | `false` | Write the results as JSON.                                                                                                                                                                                                                 |
-| `csv`  | boolean | `false` | Write the results as CSV.                                                                                                                                                                                                                  |
-| `txt`  | boolean | `false` | Write a human-readable text summary.                                                                                                                                                                                                       |
-| `plot` | boolean | `false` | Write a PNG scatter plot of price against score.                                                                                                                                                                                           |
+No files are written unless at least one format is enabled.
 
-## Product matching
+Placeholders available in `filename`:
 
-A benchmark entry and an idealo listing rarely have the same name: "Samsung 9100 PRO 4TB SSD" on PassMark shows up on idealo as "Samsung 9100 Pro 4TB", but also as separate listings for its variants (with a heatsink, for instance), and a search can return unrelated products as well. For each component, the tool therefore has to decide which of the candidates found on idealo really are that component. Every selected candidate becomes a separate, individually priced row in the results.
+| Placeholder | Replaced with |
+| --- | --- |
+| `{TYPE}` | The component type: `cpu`, `gpu`, `ssd` or `hdd`. |
+| `{REGION}` | The region being processed, for example `it`. |
+| `{DATE}` | The date and time (UTC) of the export, for example `2026-11-22T01-23-45-678Z`. |
 
-**With Ollama** (`ollama.enable: true`) — the details of the component and the numbered list of candidate names are sent to the configured model, which is asked to reply with the indexes of the matching products, or `-1` if none match. The prompt and the model's reply are logged to the console, so you can follow its decisions; nothing is logged while the model is working. The run is fully unattended. If the call to the model fails — server not reachable, model not installed, no answer within `ollama.timeout` — the whole step is retried later, up to three times: the search page is loaded again and the model is asked again. If it keeps failing, the component is dropped and is missing from the results, and the run carries on with the others (see [Troubleshooting](#troubleshooting)).
+With the default template every run adds new, timestamped files (`cpus-2026-11-22T01-23-45-678Z.json`, …) and nothing is overwritten. With a fixed name such as `{TYPE}s`, a run replaces the files of the previous one (`cpus.json`, …), which is handy when you only care about the latest results. Only the component types that got at least one price are written, though: if a run finds nothing for a type, its old files stay where they are. With more than one region, add `{REGION}` to the template (for example `{TYPE}s-{REGION}` or `{TYPE}s-{REGION}-{DATE}`): with a fixed name the regions would overwrite each other, and with the default one nothing in the file names or in the plots tells the regions apart.
 
-The reply must be exactly a comma-separated list of indexes (such as `0,2`) or `-1`. Anything else — extra words, spaces, brackets, Markdown, even a trailing line break — is discarded and treated as "no match". An index that does not correspond to any candidate is ignored without a message. Pick a model that follows instructions reliably, and check the logged replies if a component is unexpectedly missing from the results.
+### `loop`
 
-**Without Ollama** — the tool prints the details of the component and shows an interactive checklist of the candidates. Candidates whose name is identical to the component name (ignoring case) are pre-selected. Move with the arrow keys, toggle with the space bar (`a` selects everything, `i` inverts the selection) and confirm with Enter; confirming with nothing selected skips the component. A long list scrolls: only seven candidates are visible at a time, so a pre-selected one can be out of sight. This mode needs an interactive terminal and your attention until every component has been matched; the prices are fetched afterward, except that the checklist of a search that is retried (after a failure or Ctrl+C) can appear while they are being fetched.
+| Key | Type | Default | Description |
+| --- | --- | --- | --- |
+| `enable` | boolean | `false` | When a run is finished, start over, until the tool is stopped. |
+| `interval` | number | `0` | Seconds to wait between the end of a run and the start of the next one (`86400` is one day). Keep it below `2147483` (about 24.8 days): with a larger value there is no wait at all. |
 
-Ctrl+C stops the tool only when no checklist is displayed. While one is on screen, it merely cancels that question (a `WARN … User force closed the prompt with SIGINT` line appears): the tool carries on, and the same checklist comes back later in the run. A checklist can be canceled three times this way; the fourth time, the component is dropped. To stop the tool while a checklist is displayed, press Ctrl+C twice in quick succession, so that the second press arrives before the next checklist appears.
+The pause comes on top of the time a run takes: with `86400`, the results are refreshed every 24 hours plus the duration of a run, not at the same time every day.
 
-A component is skipped, and does not appear in the results, when idealo has no suitable candidate for it (`No suggestions :c` in the log) or when nothing is selected (`No selection :c`). A component, or one of its products, is also missing when its search, matching or price step keeps failing (see [Troubleshooting](#troubleshooting)). A given idealo listing is priced only once per run: if it is selected for two different components, it appears under the first one only.
+The config file is read once at startup: restart the tool to apply changes. Likewise, `--cleanup` only deletes the output directory at startup, not before every run.
 
 ## Output
 
-Results are written to the directory set in `out.dir`. Each run produces one file per enabled format for every component type that has at least one priced product:
+When a region has been fully processed, the tool writes one file per enabled format, for every component type with at least one priced product, into `out.dir`:
+
+| File | Content |
+| --- | --- |
+| `<name>.json` | All the products with all their fields, best ratio first. |
+| `<name>.csv` | The same data as a CSV table with a header row. |
+| `<name>.txt` | A readable summary: product name, idealo link, score, price and ratio. |
+| `<name>.png` | A 1200×900 scatter plot with the score on the X axis, the price on the Y axis and a label for each product. |
+
+This is what the text file looks like:
 
 ```text
-out/
-├── cpus-2026-11-17T15-07-14-029Z.csv
-├── cpus-2026-11-17T15-07-14-029Z.json
-├── cpus-2026-11-17T15-07-14-029Z.png
-├── cpus-2026-11-17T15-07-14-029Z.txt
-├── ssds-2026-11-17T15-07-14-029Z.csv
-├── ssds-2026-11-17T15-07-14-029Z.json
-├── ssds-2026-11-17T15-07-14-029Z.png
-└── ssds-2026-11-17T15-07-14-029Z.txt
+AMD Ryzen 5 7600X
+https://www.idealo.it/confronta-prezzi/202114973/amd-ryzen-5-7600x.html
+CPU Mark: 28254; Price: 105.17; Ratio: 268.7
+
+Intel Core Ultra 5 250KF Plus
+https://www.idealo.it/confronta-prezzi/209883741/intel-core-ultra-5-250kf-plus.html
+CPU Mark: 50814; Price: 207; Ratio: 245.5
 ```
 
-The file name is the component type (`cpus`, `gpus`, `ssds`, `hdds`) followed by the UTC date and time at which the files were written. If no product could be priced, no file is written.
+In the JSON and CSV files, each product keeps all the fields of its PassMark entry (`name`, `cpumark`, `socket`, `cat`, `date`, …) and gains the following ones:
 
-In every file the products are sorted by **ratio** — score divided by price — from the best value to the worst:
+| Field | Description |
+| --- | --- |
+| `objType` | Component type: `cpu`, `gpu`, `ssd` or `hdd`. |
+| `normYear` | Year taken from the PassMark date. |
+| `normCpumark` / `normG3d` / `normDiskmark` | The PassMark score as a number (CPUs / GPUs / SSDs and HDDs). |
+| `normVram` | GPUs only: video memory in MB (`-1` when unknown). |
+| `normSize` | SSDs and HDDs only: capacity in GB. |
+| `idealoName` | Name of the product on idealo. |
+| `idealoUrl` | Address of the product page on idealo. |
+| `idealoPrice` | Price found on idealo, in the currency of the region. |
+| `ratio` | Score divided by `idealoPrice`: the higher, the better the deal. |
 
-| Component type | Ratio                  |
-| -------------- | ---------------------- |
-| CPU            | CPU Mark ÷ price       |
-| GPU            | G3D Mark ÷ price       |
-| SSD            | Disk Mark ÷ price      |
-| HDD            | Capacity in GB ÷ price |
+Don't confuse `idealoPrice` and `ratio` with `price` and `value`: the latter two come from PassMark and refer to its own price in US dollars.
 
-### Text (`.txt`)
+In the plot, the best deals are the points towards the bottom right: high score, low price.
 
-A compact summary, like the example at the top of this page: for each product, its name on idealo, the link to its idealo page, then the score, the price in euros and the ratio (rounded to one decimal place). The score is labeled `CPU Mark`, `G3D Mark`, `Disk Mark` or `Size (GB)`, depending on the component type.
+## Good to know
 
-### JSON (`.json`) and CSV (`.csv`)
-
-The complete data set: every field of the PassMark entry, the normalized fields described in [Sorting](#sorting), plus:
-
-| Field         | Description                                   |
-| ------------- | --------------------------------------------- |
-| `objType`     | Component type: `cpu`, `gpu`, `ssd` or `hdd`. |
-| `idealoName`  | Product name on idealo.                       |
-| `idealoUrl`   | Link to the product page on idealo.           |
-| `idealoPrice` | Best total price in euros, shipping included. |
-| `ratio`       | Score-to-price ratio (see the table above).   |
-
-The JSON file contains an array of objects, written on a single line; the CSV file contains the same records with a header row. This is one SSD record, formatted here for readability:
-
-```json
-{
-  "objType": "ssd",
-  "id": "47598",
-  "name": "Corsair MP700 PRO XT",
-  "size": "3.6 TB",
-  "diskmark": "93,265",
-  "samples": "16",
-  "rank": 5,
-  "price": "NA",
-  "value": "NA",
-  "date": "Dec 2025",
-  "type": "SSD",
-  "href": "Corsair+MP700+PRO+XT&amp;id=47598",
-  "output": true,
-  "normYear": 2025,
-  "normSize": 3686.4,
-  "normDiskmark": 93265,
-  "idealoName": "Corsair MP700 Pro XT",
-  "idealoUrl": "https://www.idealo.it/confronta-prezzi/208341761/corsair-mp700-pro-xt.html",
-  "idealoPrice": 438,
-  "ratio": 212.9337899543379
-}
-```
-
-Note that `price` and `value` are PassMark's own figures (a US-dollar price and a value index derived from it) and play no part in the ranking: the idealo price is in `idealoPrice`, and the ranking is based on `ratio`.
-
-### Scatter plot (`.png`)
-
-A 1200 × 900 pixel chart with one labeled point per product: the score on the horizontal axis (CPU Mark, G3D Mark, Disk Mark or, for HDDs, the capacity in GB) and the idealo price in euros on the vertical axis, both starting at zero. The lower and the further to the right a point lies, the better its value for money; more precisely, the flatter the straight line from the origin to a point, the higher that product's ratio.
-
-The labels are the product names on idealo and the colors only serve to tell the points apart. Labels are not rearranged to fit: long names can be cut off at the edge of the image, and the labels of nearby points can overlap or even cover a neighboring point.
+- **Double-check before you buy.** Products are matched by name, either by an LLM or by you, and the benchmark lists are built from user submissions: neither the matches nor the lists are infallible. Every result comes with its idealo link, so open it and make sure that the product (and, for drives, its capacity) is the one you expect.
+- **Runs can take a while.** Each component costs one search plus one page per matched product, pages are loaded one at a time, and a thinking model adds its own time. Start with a small `limit` and widen the filters gradually.
+- **Failures don't stop a run.** A request that fails (a page that doesn't load, an unexpected page, an error from Ollama) is retried up to three times and then given up; the run goes on and the files are written with what was found. The crawler's last line, `Finished! Total N requests: X succeeded, Y failed.`, tells you how many requests were given up. Components without search results or without a match, and products without offers, don't count as failures: they only leave a line in the log (see [Troubleshooting](#troubleshooting)).
+- **Not every match ends up in the results.** A matched product is left out when it has no offers, when its page keeps failing, and also when its address has already come up in the same region: each address is looked up only once per region, so a product matched to two components is priced for the first one only. Likewise, the search results that idealo serves as a form instead of a link all share one address, so only the first of them in each region is looked up. Nothing is reported for the products left out because of a shared address.
+- **Stopping the tool.** Press <kbd>Ctrl</kbd>+<kbd>C</kbd>. The tool normally exits within a few seconds, with a few caveats:
+  - Depending on what the tool was doing at that moment, the products priced so far in the current region may still be written to the output directory. Such incomplete files replace the previous ones if `out.filename` has no `{DATE}`.
+  - If the crawler was idle (for example while it waited for the per-minute budget), only the current region is cut short, and the tool may carry on with the next region or run: press <kbd>Ctrl</kbd>+<kbd>C</kbd> again if it keeps going.
+  - At an open checkbox list (matching without Ollama), <kbd>Ctrl</kbd>+<kbd>C</kbd> only dismisses that list: the tool goes on with the next component and comes back to the dismissed one later. To stop the tool, press <kbd>Ctrl</kbd>+<kbd>C</kbd> again right away, before the next list opens.
+  - Ignore the `CRAWLEE_PURGE_ON_START=0` hint that the crawler prints: an interrupted run can't be resumed, because results are only kept in memory until they are written, and with that setting the next run skips whatever had already been processed.
+- **Long-running loops.** Every run leaves behind some memory that is never released (roughly 20–25 MB per region and run), so a tool that keeps looping eventually stops with `JavaScript heap out of memory`: after 200 runs at most with Node's default memory limit, and sooner with more than one region or on a machine with less than 16 GB of memory. Restart the tool from time to time, or leave `loop` disabled and start single runs from a scheduler such as cron or the Windows Task Scheduler.
+- **The `storage` directory** that appears in the working directory holds the crawler's working data. It is not part of the results and can be deleted when the tool is not running.
+- **Scraping depends on the sources.** If PassMark or idealo change their pages, the tool may stop finding data until it is updated.
 
 ## Troubleshooting
 
-- **A `WARN` line about "the `browser` option of ImpitHttpClient"** — it is printed at every start and is harmless. Like the other lines prefixed with `INFO`, `WARN` or `ERROR`, it comes from Crawlee, the crawling library the tool is built on.
+| Symptom | What to do |
+| --- | --- |
+| A `WARN` line right after startup saying that the `browser` option of ImpitHttpClient `overrides the browser fingerprint of the session` | Nothing: the tool sets that option itself, and the crawler prints the warning once every time the tool is started. |
+| `TypeError: Cannot read properties of undefined` at startup | The config is incomplete: `reading 'join'` means that `regions` is missing, `reading 'cpu'` that `filter` is missing, and `reading 'locale'` that a region is not one of the five supported codes. |
+| `fetch failed` after `Asking <model>...` and the printed prompt | Right away: the Ollama server can't be reached at `ollama.host` (is it running, is the port included, does it accept connections from other machines?). After a long wait: the answer took longer than `ollama.timeout`; raise it, or set `ollama.think` to `false`. |
+| `model '<name>' not found` | Pull the model on the Ollama server: `ollama pull <name>`. |
+| `does not support thinking` | Remove `think` from the config, or set it to `false`. |
+| `Unexpected Idealo search results page structure` or `Unexpected Idealo product page structure` | The page didn't look as expected: idealo may have changed its layout, or answered with something other than the requested page. Try again later with a lower `crawler.maxReqsPerMin`; for the search step you can also try `scraping.legacySearch`. |
+| `Request blocked - received 403 status code.` | The site refused the request. Try again later with a lower `crawler.maxReqsPerMin`. |
+| `Failed to launch browser` | The browsers are missing: run `npx playwright install` (on Linux, see [Installation](#installation)). |
+| `impit couldn't load native bindings` on Windows | Install the [Microsoft Visual C++ Redistributable](https://learn.microsoft.com/en-US/cpp/windows/latest-supported-vc-redist?view=msvc-170). |
+| The tool waits forever in an unattended run | Without Ollama the tool waits for you to select the matches in the terminal. Enable `ollama` for unattended runs. |
+| No files in the output directory | No output format is enabled in `out`, or no product was priced. In the second case the console shows where things stopped. If the `Scraping CPUs...`, `Scraping GPUs...` and `Scraping SSDs/HDDs...` lines are not followed by any `Scraping Idealo …` line, no component passed your filters: check the spelling and case of `category` and `sockets`, and the ranges. Otherwise look for `No search results :c` (`No suggestions :c` with `scraping.legacySearch`), `No selection :c` (nothing was matched) and `Not available :c` (no offers). |
 
-- **The tool seems stuck** — it is probably waiting for the model's answer (nothing is logged in the meantime), for your selection, for the requests-per-minute window to free up (see [`crawler`](#crawler)), or for a page that lacks the expected content (30 seconds per attempt, see the next entry).
+## Disclaimer
 
-- **`WARN … Reclaiming failed request` and `ERROR … Request failed and reached maximum retries`** — a page that fails to load, or a search, matching or price step that fails, does not stop the run. The request goes back to the end of the queue and is tried again later, up to three times, with a `WARN … Reclaiming failed request back to the list or queue` message each time (often followed by a stack trace). Every attempt repeats the whole step: the page is loaded again and, for a search, the model is asked or the checklist shown again. If a retry succeeds, nothing is lost. After the fourth failure the request is dropped with an `ERROR … Request failed and reached maximum retries` message and the run goes on without it, so the product or component concerned (or, if the page is a PassMark chart, every component of that chart) is missing from the results. The `url` at the end of each of these log entries, after any stack trace, shows which page it was. The text that follows the message gives the cause:
-
-  - `fetch failed` means that the Ollama server could not be reached or did not answer within `ollama.timeout`; if the request is eventually dropped, the `Error analysis` line logged at the end of the run tells the two apart (`connect ECONNREFUSED` or `Headers Timeout Error`);
-  - `model '…' not found` means that the model has to be pulled first (`ollama pull <model>`);
-  - `… does not support thinking` means that `ollama.think` has to be removed for that model;
-  - `locator.textContent: Timeout 30000ms exceeded` or `locator.innerText: Timeout 30000ms exceeded` means that an idealo page did not contain the expected search results or price;
-  - `Cannot read properties of undefined (reading 'urlPrefix')` means that [`region`](#region) is not one of the supported values;
-  - `User force closed the prompt with SIGINT` means that Ctrl+C was pressed while a checklist was displayed;
-  - `Request blocked - received 403 status code` (or `429`) and `… - Internal Server Error` mean that the site refused the request or answered with an error. If most pages end this way, the site is probably rejecting the tool's requests: try again later, with a lower `crawler.maxReqsPerMin`.
-
-  The `failed` count in the `Finished! Total … requests` line at the end of the run is the number of requests that were dropped.
-
-- **The run completes but no file is written** — no product was priced. Possible causes: no component type is enabled; no component passed your filters; every component was skipped during the search or the matching (look for `No suggestions :c` and `No selection :c` in the log); or, for every component, a page or step kept failing until it was dropped (see the previous entry), which is what happens when Ollama is enabled but cannot be reached or lacks the model. Also check that at least one output format (`out.json`, `out.csv`, `out.txt` or `out.plot`) is enabled.
-
-- **`BrowserLaunchError` / `Executable doesn't exist`** — the Playwright browsers are missing: run `npx playwright install`. On Linux the browser may also need system libraries, which `npx playwright install-deps` installs.
-
-- **After Ctrl+C, the log says `To resume, do: CRAWLEE_PURGE_ON_START=0 npm start`** — ignore this hint, which comes from Crawlee. A run started that way skips the pages that were already processed without recovering their prices, so its results can be incomplete. Simply start the tool again.
-
-- **The firewall asks whether to allow Node.js** — Crawlee runs a local proxy for its own browser and keeps it listening on a random TCP port for as long as the tool runs. The port is opened on all network interfaces and requires no authentication, but the tool only uses it through `127.0.0.1`: there is no need to allow incoming connections to Node.js.
-
-## Project structure
-
-```text
-├── config.json            # Settings (region, crawler, Ollama, filters, output)
-├── src/
-│   ├── main.ts            # Entry point: banner → filter summary → clean-up → crawl → write
-│   ├── run-crawler.ts     # Crawler setup and start URLs
-│   ├── routes.ts          # Request handlers: PassMark lists and filtering, idealo matching and prices
-│   ├── write-files.ts     # Ratio computation and JSON/CSV/TXT/PNG writers
-│   ├── clean-up.ts        # Handling of the do-clean-up argument
-│   ├── print-banner.ts    # Startup banner with the current settings
-│   ├── print-filter.ts    # Startup summary of the search filters
-│   ├── state.ts           # In-memory list of the priced products
-│   ├── models/            # TypeScript types (config, PassMark, idealo, state)
-│   └── utils/             # Constants (region data, parsers) and helper functions
-├── package.json
-└── tsconfig.json
-```
-
-Running the tool also creates two git-ignored directories in the project root: `out/` (the results, with the `out.dir` of the bundled `config.json`) and `storage/` (working data of Crawlee, emptied at the start of every run and safe to delete). `npm run build` adds `dist/` (also git-ignored) and a `tsconfig.tsbuildinfo` file, TypeScript's incremental-build cache. If you delete `dist/`, delete that file as well: otherwise the next build finds nothing to do and does not recreate `dist/`.
+This project is not affiliated with, or endorsed by, PassMark Software or idealo. It reads publicly accessible pages of their websites in an automated way, and their terms of use may restrict automated access and the reuse of their data. Read those terms (PassMark's are [here](https://www.passmark.com/legal/disclaimer.php)), keep the request rate low and use the tool responsibly.
 
 ## Built with
 
 - [Crawlee](https://crawlee.dev/) and [Playwright](https://playwright.dev/) — crawling and browser automation
-- [Ollama JavaScript library](https://github.com/ollama/ollama-js) — LLM-based product matching
-- [Inquirer](https://github.com/SBoudrias/Inquirer.js) — interactive prompts
-- [Chart.js](https://www.chartjs.org/), [chartjs-plugin-datalabels](https://chartjs-plugin-datalabels.netlify.app/) and [node-canvas](https://github.com/Automattic/node-canvas) — scatter plots
-- [csv](https://csv.js.org/) — CSV generation
-- [TypeScript](https://www.typescriptlang.org/) and [tsx](https://tsx.hirok.io/) — language and TypeScript runner
-
-## Disclaimer
-
-This project is not affiliated with, endorsed by, or sponsored by PassMark Software or idealo. It reads publicly available pages of their websites: use it responsibly, keep the request rate low and respect their terms of service. Because the tool depends on the structure of those websites, it may stop working if they change.
-
-Benchmark scores and prices are provided as is, with no guarantee of accuracy. Always double-check a price on the shop's page before buying.
+- [Ollama](https://ollama.com/) — LLM server for product matching
+- [Inquirer](https://github.com/SBoudrias/Inquirer.js) — interactive selection
+- [Chart.js](https://www.chartjs.org/) and [node-canvas](https://github.com/Automattic/node-canvas) — plots
+- [Commander](https://github.com/tj/commander.js) — command line interface
 
 ## License
 
-[ISC](https://opensource.org/license/isc)
+[ISC](https://spdx.org/licenses/ISC.html), as declared in [`package.json`](package.json).

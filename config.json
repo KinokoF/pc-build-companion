@@ -19,7 +19,7 @@
       "year.min": 2022,
       "__year.max": 2099,
       "category": "Desktop",
-      "sockets": ["AM5", "FCLGA1851"],
+      "sockets": ["AM5", "AM5 (LGA 1718)", "FCLGA1851"],
       "cpumark.min": 20000,
       "__cpumark.max": 999999
     },
@@ -55,7 +55,7 @@
       "limit": 1,
       "year.min": 2022,
       "__year.max": 2099,
-      "size.min": 15000,
+      "size.min": 14000,
       "__size.max": 999999,
       "__diskmark.min": 0,
       "__diskmark.max": 999999

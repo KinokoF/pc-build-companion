@@ -5,7 +5,7 @@ import { ObjType } from "../models/state.model.js";
 export const DEFAULT_CONFIG: DefaultConfig = {
   out: {
     dir: "out",
-    filename: "{TYPE}s-{DATE}",
+    filename: "{TYPE}s-{REGION}-{DATE}",
   },
   loop: {
     interval: 0,
@@ -126,7 +126,7 @@ export const IDEALO_CATS = {
       suggestLocation: "en Discos duros",
     },
   },
-  gb: {
+  uk: {
     cpu: {
       searchPath: "cat/3019oE2oJ0/cpus.html",
       suggestLocation: "in CPUs",
@@ -152,7 +152,7 @@ export const IDEALO_PREFIX_PATH = {
   at: "preisvergleich/OffersOfProduct",
   it: "confronta-prezzi",
   es: "precios",
-  gb: "compare",
+  uk: "compare",
 };
 
 export const IDEALO_PRICE_SUFFIX = {
@@ -161,13 +161,13 @@ export const IDEALO_PRICE_SUFFIX = {
   at: "inkl. Versand",
   it: "incl. spedizione",
   es: "envío incl.",
-  gb: "incl. delivery",
+  uk: "incl. delivery",
 };
 
 export const IDEALO_HREF_RESULTS_SELECTOR =
   ".resultList__content [href^='{IDEALO_PREFIX_URL}']";
 export const IDEALO_FORM_RESULTS_SELECTOR =
-  ".resultList__content [action='https://www.idealo.{REGION}/ipc/prg']";
+  ".resultList__content [action='{IDEALO_PRG_URL}']";
 export const IDEALO_NO_RESULTS_SELECTOR =
   ".resultList__content [data-testid='empty-result']";
 

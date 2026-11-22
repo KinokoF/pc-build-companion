@@ -26,28 +26,34 @@ import {
 } from "./utils/constants.js";
 import { extractYear, getCompareFn, normalizeSize } from "./utils/utils.js";
 
+function getIdealoBaseUrl(region: Region): string {
+  return `https://www.idealo.${REGION_DATA[region].domain}`;
+}
+
 function buildSearchReq(
   config: Config,
   region: Region,
   userData: NormComponent,
 ): any {
-  const baseUrl = `https://www.idealo.${REGION_DATA[region].domain}`;
-
   return config.scraping?.legacySearch
     ? {
-        url: `${baseUrl}/suggest?q=${userData.name}&max=${IDEALO_SUGGEST_LIMIT}`,
+        url: `${getIdealoBaseUrl(region)}/suggest?q=${userData.name}&max=${IDEALO_SUGGEST_LIMIT}`,
         label: "idealo-suggest",
         userData,
       }
     : {
-        url: `${baseUrl}/${IDEALO_CATS[region][userData.objType].searchPath}?q=${userData.name}`,
+        url: `${getIdealoBaseUrl(region)}/${IDEALO_CATS[region][userData.objType].searchPath}?q=${userData.name}`,
         label: "idealo-search",
         userData,
       };
 }
 
 function getIdealoPrefixUrl(region: Region): string {
-  return `https://www.idealo.${REGION_DATA[region].domain}/${IDEALO_PREFIX_PATH[region]}/`;
+  return `${getIdealoBaseUrl(region)}/${IDEALO_PREFIX_PATH[region]}/`;
+}
+
+function getIdealoPrgUrl(region: Region): string {
+  return `${getIdealoBaseUrl(region)}/ipc/prg`;
 }
 
 function existsLocator(locator: Locator): Promise<boolean> {
@@ -232,8 +238,8 @@ export function getRouter(
       getIdealoPrefixUrl(region),
     );
     const formResultsSelector = IDEALO_FORM_RESULTS_SELECTOR.replaceAll(
-      "{REGION}",
-      region,
+      "{IDEALO_PRG_URL}",
+      getIdealoPrgUrl(region),
     );
     const hrefResultsLocator = page.locator(hrefResultsSelector);
     const formResultsLocator = page.locator(formResultsSelector);
@@ -277,9 +283,10 @@ export function getRouter(
                 userData: { ...component, idealoName: s.name },
               }
             : {
-                url: `https://www.idealo.${region}/ipc/prg`,
+                url: getIdealoPrgUrl(region),
                 method: "POST",
                 payload: `value=${s.value}`,
+                useExtendedUniqueKey: true,
                 label: "idealo-price",
                 userData: { ...component, idealoName: s.name },
               },
