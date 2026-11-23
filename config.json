@@ -73,6 +73,11 @@
     "txt": true,
     "plot": true
   },
+  "cache": {
+    "enable": true,
+    "memory": "2gb",
+    "dir": "cache"
+  },
   "loop": {
     "enable": false,
     "interval": 86400

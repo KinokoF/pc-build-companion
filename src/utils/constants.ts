@@ -7,6 +7,10 @@ export const DEFAULT_CONFIG: DefaultConfig = {
     dir: "out",
     filename: "{TYPE}s-{REGION}-{DATE}",
   },
+  cache: {
+    memory: "2gb",
+    dir: "cache",
+  },
   loop: {
     interval: 0,
   },

@@ -1,4 +1,5 @@
 import { Browser, ImpitHttpClient } from "@crawlee/impit-client";
+import { BentoCache } from "bentocache";
 import { ConcurrencySystem, PlaywrightCrawler, Statistics } from "crawlee";
 import { Ollama } from "ollama";
 import { Config, Region } from "./models/config.model.js";
@@ -9,6 +10,7 @@ const BIG_NUM = 999_999;
 export async function runCrawler(
   config: Config,
   region: Region,
+  bento: BentoCache<any>,
   ollama: Ollama,
 ): Promise<void> {
   const startUrls = [];
@@ -42,7 +44,7 @@ export async function runCrawler(
 
   const crawler = new PlaywrightCrawler({
     httpClient: new ImpitHttpClient({ browser: Browser.Chrome }),
-    requestHandler: getRouter(config, region, ollama),
+    requestHandler: getRouter(config, region, bento, ollama),
     requestHandlerTimeoutSecs: BIG_NUM,
     statusMessageLoggingInterval: BIG_NUM,
     statistics: new Statistics({ logIntervalSecs: BIG_NUM }),

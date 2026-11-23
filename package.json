@@ -9,6 +9,7 @@
         "@internationalized/number": "^3.6.9",
         "@types/culori": "^4.0.1",
         "@types/lodash": "^4.17.27",
+        "bentocache": "^1.6.1",
         "canvas": "^4.0.0-rc3",
         "chart.js": "^4.6.1",
         "chartjs-plugin-datalabels": "^2.2.0",

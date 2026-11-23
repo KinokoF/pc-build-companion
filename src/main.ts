@@ -2,6 +2,7 @@ import { program } from "commander";
 import { log } from "console";
 import { sleep } from "crawlee";
 import { cleanUp } from "./clean-up.js";
+import { initBento } from "./init-bento.js";
 import { initOllama } from "./init-ollama.js";
 import { printBanner } from "./print-banner.js";
 import { printFilter } from "./print-filter.js";
@@ -25,6 +26,7 @@ if (program.opts().cleanup) {
   cleanUp(config);
 }
 
+const bento = initBento(config);
 const ollama = initOllama(config);
 
 do {
@@ -33,7 +35,7 @@ do {
 
     state.products = [];
 
-    await runCrawler(config, region, ollama);
+    await runCrawler(config, region, bento, ollama);
 
     writeFiles(config, region);
   }

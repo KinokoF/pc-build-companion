@@ -38,9 +38,14 @@ Output
     TXT            : ${config.out.txt ?? UNSET}
     Plot           : ${config.out.plot ?? UNSET}
 
+Cache
+    Enable         : ${config.cache.enable ?? UNSET}
+    Memory         : ${config.cache.memory ?? UNSET}
+    Dir            : ${config.cache.dir ?? UNSET}
+
 Loop
-    Enable         : ${config.loop?.enable ?? UNSET}
-    Interval (s)   : ${config.loop?.interval ?? UNSET}
+    Enable         : ${config.loop.enable ?? UNSET}
+    Interval (s)   : ${config.loop.interval ?? UNSET}
 
 ====================\n`);
 }

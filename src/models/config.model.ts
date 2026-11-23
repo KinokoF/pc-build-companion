@@ -66,6 +66,12 @@ interface Out {
   plot?: boolean;
 }
 
+interface Cache {
+  enable?: boolean;
+  memory?: string;
+  dir?: string;
+}
+
 interface Loop {
   enable?: boolean;
   interval?: number;
@@ -78,6 +84,7 @@ export interface ProvidedConfig {
   filter: Filter;
   scraping?: Scraping;
   out: Out;
+  cache?: Cache;
   loop?: Loop;
 }
 
@@ -86,12 +93,18 @@ interface DefaultOut {
   filename: string;
 }
 
+interface DefaultCache {
+  memory: string;
+  dir: string;
+}
+
 interface DefaultLoop {
   interval: number;
 }
 
 export interface DefaultConfig {
   out: DefaultOut;
+  cache: DefaultCache;
   loop: DefaultLoop;
 }
 

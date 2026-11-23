@@ -1,4 +1,5 @@
 import { NumberParser } from "@internationalized/number";
+import { BentoCache } from "bentocache";
 import { log } from "console";
 import { createPlaywrightRouter, RouterHandler } from "crawlee";
 import { Ollama } from "ollama";
@@ -69,6 +70,7 @@ function existsLocator(locator: Locator): Promise<boolean> {
 export function getRouter(
   config: Config,
   region: Region,
+  bento: BentoCache<any>,
   ollama: Ollama,
 ): RouterHandler<any> {
   const currencyParser = new NumberParser(REGION_DATA[region].locale, {
@@ -265,10 +267,9 @@ export function getRouter(
         candidates.push({ type: "form", name, value });
       }
 
-      candidates.sort((a, b) => a.name.localeCompare(b.name));
-
       const selection = await selectMatches(
         config,
+        bento,
         ollama,
         component,
         candidates,
@@ -318,12 +319,12 @@ export function getRouter(
       const json = await page.locator("pre").textContent();
       const candidates = (JSON.parse(json!) as IdealoResponse).groups[0]?.items
         .filter((s) => s.url.startsWith(prefixUrl) && s.location === location)
-        .map((s) => ({ name: s.titlePlain, url: s.url }))
-        .sort((a, b) => a.name.localeCompare(b.name));
+        .map((s) => ({ name: s.titlePlain, url: s.url }));
 
       if (candidates?.length) {
         const selection = await selectMatches(
           config,
+          bento,
           ollama,
           component,
           candidates,
