@@ -113,13 +113,13 @@ export async function selectMatches<T extends Candidate>(
     const selection = toAsk.length ? await ask(toAsk) : [];
     const selectedNames = selection.map((c) => c.name);
 
-    const settingPromises = uncached.map((e) =>
+    const setPromises = uncached.map((e) =>
       cache.setForever({
         key: e.key,
         value: selectedNames.includes(e.candidate.name),
       }),
     );
-    await Promise.all(settingPromises);
+    await Promise.all(setPromises);
 
     return entries
       .filter((e) => e.match ?? selectedNames.includes(e.candidate.name))
