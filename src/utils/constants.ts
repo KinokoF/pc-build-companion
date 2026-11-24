@@ -169,11 +169,11 @@ export const IDEALO_PRICE_SUFFIX = {
 };
 
 export const IDEALO_HREF_RESULTS_SELECTOR =
-  ".resultList__content [href^='{IDEALO_PREFIX_URL}']";
+  "[data-testid='link'][href^='{IDEALO_PREFIX_URL}']";
 export const IDEALO_FORM_RESULTS_SELECTOR =
-  ".resultList__content [action='{IDEALO_PRG_URL}']";
+  "[data-testid='form'][action='{IDEALO_PRG_URL}']";
 export const IDEALO_NO_RESULTS_SELECTOR =
-  ".resultList__content [data-testid='empty-result']";
+  "[data-testid='empty-result']";
 
 export const IDEALO_PRICE_EXCL_SHIPPING_SELECTOR =
   "a.productOffers-listItemOfferPrice";

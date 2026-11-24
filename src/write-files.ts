@@ -39,10 +39,21 @@ function getCurrencySymbol(region: Region): string {
 
 function writeJson(
   config: Config,
+  region: Region,
+  type: ObjType,
+  createdAt: Date,
   products: RatioProduct[],
   filename: string,
 ): void {
-  const json = JSON.stringify(products);
+  const data = {
+    version: 1,
+    region,
+    filter: config.filter[type],
+    priceIncludingShipping: !!config.scraping?.priceIncludingShipping,
+    createdAt,
+    products: products,
+  };
+  const json = JSON.stringify(data);
 
   writeFileSync(`${config.out.dir}/${filename}.json`, json);
 }
@@ -129,9 +140,9 @@ function writePlot(
       plugins: {
         datalabels: {
           align: "top",
-          backgroundColor: "white",
+          backgroundColor: "#fffa",
           borderWidth: 0.4,
-          borderColor: "gray",
+          borderColor: "#aaaa",
           formatter: (value: RatioProduct) => value.idealoName,
         },
       },
@@ -159,7 +170,7 @@ export function writeFiles(config: Config, region: Region): void {
   ) {
     mkdirSync(config.out.dir, { recursive: true });
 
-    const date = new Date().toISOString().replaceAll(/:|\./g, "-");
+    const now = new Date();
 
     for (const type of TYPES) {
       const filtered = state.products
@@ -171,10 +182,11 @@ export function writeFiles(config: Config, region: Region): void {
         const filename = config.out.filename
           .replaceAll("{TYPE}", type)
           .replaceAll("{REGION}", region)
-          .replaceAll("{DATE}", date);
+          .replaceAll("{TIMESTAMP}", now.getTime().toString())
+          .replaceAll("{DATE}", now.toISOString().replaceAll(/:|\./g, "-"));
 
         if (config.out.json) {
-          writeJson(config, filtered, filename);
+          writeJson(config, region, type, now, filtered, filename);
         }
 
         if (config.out.csv) {
