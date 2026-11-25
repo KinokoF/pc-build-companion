@@ -73,6 +73,7 @@ function writeJson(
 ): void {
   const data = {
     version: 1,
+    type,
     region,
     filter: config.filter[type],
     priceIncludingShipping: !!config.scraping?.priceIncludingShipping,
@@ -104,20 +105,22 @@ function writeTxt(
 ): void {
   const txt =
     `${getTitle(type)}\n${getSubtitle(config, region, createdAt)}\n${CREDITS}\n\n` +
-    products
-      .map((p) => {
-        switch (p.objType) {
-          case "cpu":
-            return `${p.idealoName}\n${p.idealoUrl}\nCPU Mark: ${p.normCpumark}; Price: ${p.idealoPrice}; Ratio: ${p.ratio.toFixed(1)}`;
-          case "gpu":
-            return `${p.idealoName}\n${p.idealoUrl}\nG3D Mark: ${p.normG3d}; Price: ${p.idealoPrice}; Ratio: ${p.ratio.toFixed(1)}`;
-          case "ssd":
-            return `${p.idealoName}\n${p.idealoUrl}\nDisk Mark: ${p.normDiskmark}; Price: ${p.idealoPrice}; Ratio: ${p.ratio.toFixed(1)}`;
-          case "hdd":
-            return `${p.idealoName}\n${p.idealoUrl}\nSize (GB): ${p.normSize}; Price: ${p.idealoPrice}; Ratio: ${p.ratio.toFixed(1)}`;
-        }
-      })
-      .join("\n\n");
+    products.length
+      ? products
+          .map((p) => {
+            switch (p.objType) {
+              case "cpu":
+                return `${p.idealoName}\n${p.idealoUrl}\nCPU Mark: ${p.normCpumark}; Price: ${p.idealoPrice}; Ratio: ${p.ratio.toFixed(1)}`;
+              case "gpu":
+                return `${p.idealoName}\n${p.idealoUrl}\nG3D Mark: ${p.normG3d}; Price: ${p.idealoPrice}; Ratio: ${p.ratio.toFixed(1)}`;
+              case "ssd":
+                return `${p.idealoName}\n${p.idealoUrl}\nDisk Mark: ${p.normDiskmark}; Price: ${p.idealoPrice}; Ratio: ${p.ratio.toFixed(1)}`;
+              case "hdd":
+                return `${p.idealoName}\n${p.idealoUrl}\nSize (GB): ${p.normSize}; Price: ${p.idealoPrice}; Ratio: ${p.ratio.toFixed(1)}`;
+            }
+          })
+          .join("\n\n")
+      : "No products";
 
   writeFileSync(`${config.out.dir}/${filename}.txt`, txt);
 }
@@ -221,29 +224,26 @@ export function writeFiles(config: Config, region: Region): void {
         .filter((p) => p.objType === type)
         .map((p) => ({ ...p, ratio: getScore(p) / p.idealoPrice }))
         .sort((a, b) => b.ratio - a.ratio);
+      const filename = config.out.filename
+        .replaceAll("{TYPE}", type)
+        .replaceAll("{REGION}", region)
+        .replaceAll("{TIMESTAMP}", now.getTime().toString())
+        .replaceAll("{DATE}", now.toISOString().replaceAll(/:|\./g, "-"));
 
-      if (filtered.length) {
-        const filename = config.out.filename
-          .replaceAll("{TYPE}", type)
-          .replaceAll("{REGION}", region)
-          .replaceAll("{TIMESTAMP}", now.getTime().toString())
-          .replaceAll("{DATE}", now.toISOString().replaceAll(/:|\./g, "-"));
+      if (config.out.json) {
+        writeJson(config, region, type, now, filtered, filename);
+      }
 
-        if (config.out.json) {
-          writeJson(config, region, type, now, filtered, filename);
-        }
+      if (config.out.csv) {
+        writeCsv(config, filtered, filename);
+      }
 
-        if (config.out.csv) {
-          writeCsv(config, filtered, filename);
-        }
+      if (config.out.txt) {
+        writeTxt(config, region, type, now, filtered, filename);
+      }
 
-        if (config.out.txt) {
-          writeTxt(config, region, type, now, filtered, filename);
-        }
-
-        if (config.out.plot) {
-          writePlot(config, region, type, now, filtered, filename);
-        }
+      if (config.out.plot) {
+        writePlot(config, region, type, now, filtered, filename);
       }
     }
   }
