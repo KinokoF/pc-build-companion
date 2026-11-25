@@ -105,7 +105,7 @@ function writeTxt(
 ): void {
   const txt =
     `${getTitle(type)}\n${getSubtitle(config, region, createdAt)}\n${CREDITS}\n\n` +
-    products.length
+    (products.length
       ? products
           .map((p) => {
             switch (p.objType) {
@@ -120,7 +120,7 @@ function writeTxt(
             }
           })
           .join("\n\n")
-      : "No products";
+      : "No products");
 
   writeFileSync(`${config.out.dir}/${filename}.txt`, txt);
 }
@@ -211,15 +211,17 @@ function writePlot(
 export function writeFiles(config: Config, region: Region): void {
   log("Writing JSONs/CSVs/TXTs/plots...");
 
+  const enabledTypes = TYPES.filter((t) => config.filter[t]?.enable);
+
   if (
-    state.products.length &&
+    enabledTypes.length &&
     (config.out.json || config.out.csv || config.out.txt || config.out.plot)
   ) {
     mkdirSync(config.out.dir, { recursive: true });
 
     const now = new Date();
 
-    for (const type of TYPES) {
+    for (const type of enabledTypes) {
       const filtered = state.products
         .filter((p) => p.objType === type)
         .map((p) => ({ ...p, ratio: getScore(p) / p.idealoPrice }))
