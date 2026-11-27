@@ -17,10 +17,20 @@ const DECISION_FIELDS: Record<
   string,
   { label: string; valueFormatter?: (v: any) => any }
 > = {
-  objType: { label: "Type", valueFormatter: (v: ObjType) => v.toUpperCase() },
-  name: { label: "Name" },
-  memSize: { label: "VRAM" },
-  size: { label: "Size" },
+  objType: {
+    label: "Type",
+    valueFormatter: (v: ObjType) => v.toUpperCase(),
+  },
+  name: {
+    label: "Name",
+  },
+  normVram: {
+    label: "VRAM (MB)",
+    valueFormatter: (v: number) => (v > -1 ? v : "N/A"),
+  },
+  normSize: {
+    label: "Size (GB)",
+  },
 };
 
 function getCompDetails(component: NormComponent): string {
