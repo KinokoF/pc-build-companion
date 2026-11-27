@@ -32,8 +32,8 @@ export function printFilter(config: Config): void {
   log("   Year min      : " + (gpu?.["year.min"] ?? UNSET));
   log("   Year max      : " + (gpu?.["year.max"] ?? UNSET));
   log("   Category      : " + (gpu?.category ?? UNSET));
-  log("   VRAM (MB) min : " + (gpu?.["vram.min"] ?? UNSET));
-  log("   VRAM (MB) max : " + (gpu?.["vram.max"] ?? UNSET));
+  log("   VRAM min (MB) : " + (gpu?.["vram.min"] ?? UNSET));
+  log("   VRAM max (MB) : " + (gpu?.["vram.max"] ?? UNSET));
   log("   G3D Mark min  : " + (gpu?.["g3d.min"] ?? UNSET));
   log("   G3D Mark max  : " + (gpu?.["g3d.max"] ?? UNSET));
   log("");
@@ -45,8 +45,8 @@ export function printFilter(config: Config): void {
   log("   Limit         : " + (ssd?.limit ?? UNSET));
   log("   Year min      : " + (ssd?.["year.min"] ?? UNSET));
   log("   Year max      : " + (ssd?.["year.max"] ?? UNSET));
-  log("   Size (GB) min : " + (ssd?.["size.min"] ?? UNSET));
-  log("   Size (GB) max : " + (ssd?.["size.max"] ?? UNSET));
+  log("   Size min (GB) : " + (ssd?.["size.min"] ?? UNSET));
+  log("   Size max (GB) : " + (ssd?.["size.max"] ?? UNSET));
   log("   Disk Mark min : " + (ssd?.["diskmark.min"] ?? UNSET));
   log("   Disk Mark max : " + (ssd?.["diskmark.max"] ?? UNSET));
   log("");
@@ -58,8 +58,8 @@ export function printFilter(config: Config): void {
   log("   Limit         : " + (hdd?.limit ?? UNSET));
   log("   Year min      : " + (hdd?.["year.min"] ?? UNSET));
   log("   Year max      : " + (hdd?.["year.max"] ?? UNSET));
-  log("   Size (GB) min : " + (hdd?.["size.min"] ?? UNSET));
-  log("   Size (GB) max : " + (hdd?.["size.max"] ?? UNSET));
+  log("   Size min (GB) : " + (hdd?.["size.min"] ?? UNSET));
+  log("   Size max (GB) : " + (hdd?.["size.max"] ?? UNSET));
   log("   Disk Mark min : " + (hdd?.["diskmark.min"] ?? UNSET));
   log("   Disk Mark max : " + (hdd?.["diskmark.max"] ?? UNSET));
   log("");

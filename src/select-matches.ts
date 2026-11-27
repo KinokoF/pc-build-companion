@@ -5,7 +5,7 @@ import inquirer from "inquirer";
 import { Ollama } from "ollama";
 import z from "zod";
 import { Config } from "./models/config.model.js";
-import { NormComponent } from "./models/state.model.js";
+import { NormComponent, ObjType } from "./models/state.model.js";
 
 interface Candidate {
   name: string;
@@ -13,9 +13,23 @@ interface Candidate {
 
 const UINT32_ARRAY = z.uint32().array();
 
+const DECISION_FIELDS: Record<
+  string,
+  { label: string; valueFormatter?: (v: any) => any }
+> = {
+  objType: { label: "Type", valueFormatter: (v: ObjType) => v.toUpperCase() },
+  name: { label: "Name" },
+  memSize: { label: "VRAM" },
+  size: { label: "Size" },
+};
+
 function getCompDetails(component: NormComponent): string {
   return Object.entries(component)
-    .map(([k, v]) => `${k}: ${v}`)
+    .filter(([k]) => DECISION_FIELDS[k])
+    .map(
+      ([k, v]) =>
+        `${DECISION_FIELDS[k].label}: ${DECISION_FIELDS[k].valueFormatter?.(v) ?? v}`,
+    )
     .join("\n");
 }
 
@@ -95,7 +109,10 @@ export async function selectMatches<T extends Candidate>(
       : askUser(component, toAsk);
 
   if (config.cache.enable) {
-    const compString = Object.values(component).join("※");
+    const compString = Object.entries(component)
+      .filter(([k]) => DECISION_FIELDS[k])
+      .map(([_, v]) => v)
+      .join("※");
     const compHash = sha512(compString);
 
     const cache = bento.namespace(compHash);

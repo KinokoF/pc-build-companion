@@ -3,7 +3,7 @@
     "version": "1.0.0",
     "private": true,
     "type": "module",
-    "description": "A simple tool for retrieving scores and prices for CPUs, GPUs, SSDs, and HDDs!",
+    "description": "A CLI tool for retrieving scores and prices for CPUs, GPUs, SSDs, and HDDs!",
     "dependencies": {
         "@crawlee/impit-client": "^4.0.0-rc.1",
         "@internationalized/number": "^3.6.9",

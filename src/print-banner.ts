@@ -10,7 +10,7 @@ export function printBanner(config: Config): void {
 █▀▀  █        █▀▀▄ █  █ █ █ █  █     █    █  █ █ █ █ █  █ █  █  █  █ █ █  █ █  █ 
 ▀     ▀▀▀     ▀▀▀   ▀▀▀ ▀ ▀  ▀▀▀      ▀▀▀  ▀▀  ▀ ▀ ▀ █▀▀   ▀▀▀▀ ▀  ▀ ▀  ▀▀  ▀  ▀ 
                                                      ▀                           (v. ${version})
-A simple tool for retrieving scores and prices for CPUs, GPUs, SSDs, and HDDs!
+A CLI tool for retrieving scores and prices for CPUs, GPUs, SSDs, and HDDs!
 
 ====== CONFIG ======
 
