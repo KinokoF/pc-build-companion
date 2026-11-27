@@ -12,12 +12,14 @@ export function printBanner(config: Config): void {
                                                      ▀                           (v. ${version})
 A CLI tool for retrieving scores and prices for CPUs, GPUs, SSDs, and HDDs!
 
+NEW! Want to view the results via UI? Check out PC Build Companion Viewer (https://github.com/KinokoF/pbc-viewer)!
+
 ====== CONFIG ======
 
 Regions            : ${config.regions.join(", ")}
 
 Crawler
-    Max reqs/min   : ${config.crawler?.maxReqsPerMin ?? UNSET}
+    Delay (s)      : ${config.crawler?.delay ?? UNSET}
 
 Ollama
     Enable         : ${config.ollama?.enable ?? UNSET}

@@ -1,7 +1,7 @@
 export type Region = "de" | "fr" | "at" | "it" | "es";
 
 interface Crawler {
-  maxReqsPerMin?: number;
+  delay?: number;
 }
 
 interface Ollama {

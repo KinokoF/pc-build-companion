@@ -1,7 +1,7 @@
 {
   "regions": ["it"],
   "crawler": {
-    "maxReqsPerMin": 10
+    "delay": 10
   },
   "ollama": {
     "enable": true,

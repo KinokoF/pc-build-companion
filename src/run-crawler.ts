@@ -39,7 +39,6 @@ export async function runCrawler(
   const concurrencySystem = new ConcurrencySystem({
     loggingIntervalSecs: null,
     maxConcurrency: 1,
-    maxTasksPerMinute: config.crawler?.maxReqsPerMin,
   });
 
   const crawler = new PlaywrightCrawler({
@@ -49,6 +48,7 @@ export async function runCrawler(
     statusMessageLoggingInterval: BIG_NUM,
     statistics: new Statistics({ logIntervalSecs: BIG_NUM }),
     concurrencySystem,
+    sameDomainDelaySecs: config.crawler?.delay,
   });
 
   await concurrencySystem.start();
